@@ -5,6 +5,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 import asyncio
 import base64
 import mimetypes
+import tempfile
 import os
 import re
 import json
@@ -1150,7 +1151,7 @@ Diagram detection:
     return [normalize_parser_output(q) for q in questions if isinstance(q, dict)]
 
 
-WORK_DIR = "parsed_output2"
+WORK_DIR = os.path.join(tempfile.gettempdir(), "mathsy_parsed_output2")
 QUESTION_IMG_DIR = os.path.join(WORK_DIR, "question_pages")
 MARKING_IMG_DIR = os.path.join(WORK_DIR, "marking_pages")
 QUESTION_CROP_DIR = os.path.join(WORK_DIR, "question_crops")

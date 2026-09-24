@@ -4,6 +4,7 @@ import json
 import base64
 import asyncio
 import mimetypes
+import tempfile
 from copy import deepcopy
 from pathlib import Path
 import cloudinary
@@ -25,7 +26,7 @@ from parser.parser_common import (
 from parser.metadata_classifier import apply_verified_chapters
 K1_QUESTION_SEMAPHORE = None
 K1_MARKING_SEMAPHORE = None
-WORK_DIR = "parsed_output_k1"
+WORK_DIR = os.path.join(tempfile.gettempdir(), "mathsy_parsed_output_k1")
 QUESTION_IMG_DIR = os.path.join(WORK_DIR, "question_pages")
 MARKING_IMG_DIR = os.path.join(WORK_DIR, "marking_pages")
 QUESTION_CROP_DIR = os.path.join(WORK_DIR, "question_crops")

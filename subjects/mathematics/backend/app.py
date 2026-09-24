@@ -3984,6 +3984,106 @@ def get_student_dashboard(student_id):
         if conn:
             conn.close()
     
+
+@app.route("/api/student/platform-summary/<int:student_id>", methods=["GET"])
+@require_auth("student", "parent", "admin")
+def get_student_platform_summary(student_id):
+    """Return a lightweight Math progress snapshot for the shared EasyLearn portal.
+
+    This intentionally avoids dashboard ML/Pinecone logic. Aiven remains the
+    Mathematics source of truth; only aggregate metrics are exposed for sync.
+    """
+    conn = None
+    cursor = None
+    try:
+        if g.current_user["role"] == "student" and g.current_user["id"] != student_id:
+            return jsonify({"success": False, "message": "Forbidden."}), 403
+
+        if g.current_user["role"] == "parent":
+            if not is_parent_linked_to_student(g.current_user["id"], student_id):
+                return jsonify({"success": False, "message": "Forbidden."}), 403
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) AS practice_sessions,
+                COALESCE(SUM(total_questions_answered), 0) AS questions_answered,
+                COALESCE(SUM(correct_count), 0) AS correct_count,
+                COALESCE(SUM(duration_seconds), 0) AS duration_seconds,
+                MAX(COALESCE(end_time, start_time)) AS last_active
+            FROM practice_sessions
+            WHERE user_id = %s
+              AND end_time IS NOT NULL
+            """,
+            (student_id,),
+        )
+        practice = cursor.fetchone() or {}
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) AS quick_snap_count,
+                MAX(created_at) AS last_active
+            FROM quick_snap_events
+            WHERE user_id = %s
+            """,
+            (student_id,),
+        )
+        quick_snap = cursor.fetchone() or {}
+
+        answered = int(practice.get("questions_answered") or 0)
+        correct = int(practice.get("correct_count") or 0)
+        quick_count = int(quick_snap.get("quick_snap_count") or 0)
+        sessions = int(practice.get("practice_sessions") or 0)
+        duration_seconds = int(practice.get("duration_seconds") or 0)
+
+        average_score = (
+            round((correct / answered) * 100, 1)
+            if answered > 0
+            else None
+        )
+
+        last_candidates = [
+            value for value in (
+                practice.get("last_active"),
+                quick_snap.get("last_active"),
+            )
+            if value is not None
+        ]
+        last_active = max(last_candidates).isoformat() if last_candidates else None
+
+        return jsonify({
+            "success": True,
+            "subject": "mathematics",
+            "average_score": average_score,
+            "activities": sessions + quick_count,
+            "questions_answered": answered + quick_count,
+            "minutes_spent": round(duration_seconds / 60.0, 1),
+            "last_active": last_active,
+            "metadata": {
+                "practice_sessions": sessions,
+                "quick_snap_count": quick_count,
+                "source": "aiven_mysql",
+            },
+        }), 200
+
+    except Exception as e:
+        print("PLATFORM SUMMARY ERROR:", e)
+        return jsonify({
+            "success": False,
+            "message": "Failed to load Mathematics portal summary."
+        }), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 # Endpoint for student to create a new chat session
 @app.route("/api/chat/sessions", methods=["POST"])
 @require_auth("student")

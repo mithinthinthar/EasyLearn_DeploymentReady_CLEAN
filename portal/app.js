@@ -56,6 +56,16 @@ function showSignedIn(user) {
   showView("dashboard");
   loadDashboard();
   checkAll();
+
+  // Warm the Math Flask function while the learner is still on the portal.
+  // This does not block the dashboard. It reduces the chance that clicking
+  // Mathematics has to pay the full Vercel cold-start cost.
+  if (!IS_LOCAL) {
+    fetch(`/math-api/?warm=${Date.now()}`, {
+      method: "GET",
+      cache: "no-store",
+    }).catch(() => {});
+  }
 }
 
 function showView(name) {

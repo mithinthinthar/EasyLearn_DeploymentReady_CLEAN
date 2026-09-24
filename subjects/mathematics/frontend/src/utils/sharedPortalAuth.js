@@ -21,6 +21,57 @@ async function readResponse(response) {
   }
 }
 
+
+
+async function syncMathematicsSnapshot(mathUser, idToken) {
+  try {
+    if (!mathUser?.id || !idToken) return;
+
+    const summaryResponse = await fetch(
+      `${MATHEMATICS_API_URL}/api/student/platform-summary/${mathUser.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+
+    const summary = await readResponse(summaryResponse);
+    if (!summaryResponse.ok || !summary.success) {
+      console.warn("Mathematics portal snapshot source was unavailable.", summary);
+      return;
+    }
+
+    const snapshotResponse = await fetch(
+      `${SHARED_AUTH_URL}/subjects/mathematics/snapshot`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subject: "mathematics",
+          average_score: summary.average_score,
+          activities: summary.activities || 0,
+          questions_answered: summary.questions_answered || 0,
+          minutes_spent: summary.minutes_spent || 0,
+          last_active: summary.last_active || null,
+          metadata: summary.metadata || {},
+        }),
+      },
+    );
+
+    if (!snapshotResponse.ok) {
+      console.warn("Mathematics portal snapshot could not be saved.");
+    }
+  } catch (error) {
+    // Snapshot sync is deliberately non-blocking: Math should still open even
+    // if the shared dashboard is temporarily unavailable.
+    console.warn("Mathematics portal snapshot sync warning:", error);
+  }
+}
+
 async function performPortalSignIn() {
   // Local guest mode does not initialize Firebase.
   if (!auth) {
@@ -101,6 +152,10 @@ async function performPortalSignIn() {
     "user",
     JSON.stringify(mathData.user),
   );
+
+  // Do not make the Math loading screen wait for dashboard synchronization.
+  // The UI opens immediately; Aiven -> Firestore aggregate sync runs quietly.
+  syncMathematicsSnapshot(mathData.user, idToken);
 
   return {
     status: "signed-in",

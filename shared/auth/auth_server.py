@@ -62,6 +62,7 @@ db = firestore.client()
 users = db.collection("easylearn_users")
 events = db.collection("learning_events")
 relationships = db.collection("student_relationships")
+subject_snapshots = db.collection("subject_snapshots")
 
 app = FastAPI(title="EasyLearn Platform API", version="2.0.0")
 app.add_middleware(
@@ -81,6 +82,18 @@ class SessionRequest(BaseModel):
 class LinkStudentRequest(BaseModel):
     student_code: str = Field(min_length=4, max_length=32)
     nickname: Optional[str] = Field(default=None, max_length=60)
+
+
+
+
+class SubjectSnapshotRequest(BaseModel):
+    subject: Literal["history", "mathematics", "bahasa_melayu"]
+    average_score: Optional[float] = Field(default=None, ge=0, le=100)
+    activities: int = Field(default=0, ge=0)
+    questions_answered: int = Field(default=0, ge=0)
+    minutes_spent: float = Field(default=0, ge=0)
+    last_active: Optional[str] = None
+    metadata: dict = Field(default_factory=dict)
 
 
 class LearningEventRequest(BaseModel):
@@ -252,32 +265,87 @@ def student_events(student_uid: str) -> list[dict]:
     return result
 
 
-def summarize_subject(items: list[dict], subject: str) -> dict:
+def get_subject_snapshot(student_uid: str, subject: str) -> Optional[dict]:
+    snapshot = subject_snapshots.document(f"{student_uid}_{subject}").get()
+    if not snapshot.exists:
+        return None
+    value = snapshot.to_dict() or {}
+    value["updatedAt"] = serialize_timestamp(value.get("updatedAt"))
+    return value
+
+
+def summarize_subject(items: list[dict], subject: str, student_uid: Optional[str] = None) -> dict:
     subject_items = [item for item in items if item.get("subject") == subject]
     scored = [float(item["percentage"]) for item in subject_items if item.get("percentage") is not None]
+
+    event_attempts = len(subject_items)
+    event_questions = sum(int(item.get("questionsAnswered") or 0) for item in subject_items)
+    event_minutes = round(sum(float(item.get("durationMinutes") or 0) for item in subject_items), 1)
+    event_average = round(sum(scored) / len(scored), 1) if scored else None
+    event_last = subject_items[0].get("createdAt") if subject_items else None
+
+    snapshot = get_subject_snapshot(student_uid, subject) if student_uid else None
+    if snapshot:
+        snapshot_average = snapshot.get("averageScore")
+        snapshot_attempts = int(snapshot.get("activities") or 0)
+        snapshot_questions = int(snapshot.get("questionsAnswered") or 0)
+        snapshot_minutes = float(snapshot.get("minutesSpent") or 0)
+        snapshot_last = snapshot.get("lastActive") or snapshot.get("updatedAt")
+
+        # A snapshot is a current aggregate from the subject's own source of
+        # truth. Event tracking may contain newer activity, so keep the larger
+        # totals while preferring the subject's current aggregate score.
+        attempts = max(event_attempts, snapshot_attempts)
+        questions = max(event_questions, snapshot_questions)
+        minutes = max(event_minutes, snapshot_minutes)
+        average = (
+            float(snapshot_average)
+            if snapshot_average is not None
+            else event_average
+        )
+        last_candidates = [value for value in (event_last, snapshot_last) if value]
+        last_active = max(last_candidates) if last_candidates else None
+    else:
+        attempts = event_attempts
+        questions = event_questions
+        minutes = event_minutes
+        average = event_average
+        last_active = event_last
+
     return {
         "subject": subject,
         "label": SUBJECT_LABELS[subject],
-        "attempts": len(subject_items),
-        "average_score": round(sum(scored) / len(scored), 1) if scored else None,
-        "questions_answered": sum(int(item.get("questionsAnswered") or 0) for item in subject_items),
-        "minutes_spent": round(sum(float(item.get("durationMinutes") or 0) for item in subject_items), 1),
-        "last_active": subject_items[0].get("createdAt") if subject_items else None,
+        "attempts": attempts,
+        "average_score": round(average, 1) if average is not None else None,
+        "questions_answered": questions,
+        "minutes_spent": round(minutes, 1),
+        "last_active": last_active,
     }
 
 
 def student_summary(student: dict) -> dict:
     items = student_events(student["uid"])
-    scored = [float(item["percentage"]) for item in items if item.get("percentage") is not None]
+    subjects = [
+        summarize_subject(items, subject, student["uid"])
+        for subject in sorted(VALID_SUBJECTS)
+    ]
+    subject_scores = [
+        float(subject["average_score"])
+        for subject in subjects
+        if subject.get("average_score") is not None
+    ]
     return {
         "student": public_profile(student),
         "overall": {
-            "average_score": round(sum(scored) / len(scored), 1) if scored else None,
-            "activities": len(items),
-            "questions_answered": sum(int(item.get("questionsAnswered") or 0) for item in items),
-            "minutes_spent": round(sum(float(item.get("durationMinutes") or 0) for item in items), 1),
+            "average_score": (
+                round(sum(subject_scores) / len(subject_scores), 1)
+                if subject_scores else None
+            ),
+            "activities": sum(subject["attempts"] for subject in subjects),
+            "questions_answered": sum(subject["questions_answered"] for subject in subjects),
+            "minutes_spent": round(sum(subject["minutes_spent"] for subject in subjects), 1),
         },
-        "subjects": [summarize_subject(items, subject) for subject in sorted(VALID_SUBJECTS)],
+        "subjects": subjects,
         "recent_activity": items[:8],
     }
 
@@ -419,6 +487,33 @@ def unlink_student(student_uid: str, request: Request):
     viewer = current_profile(request, {"teacher", "parent"})
     relationships.document(f"{viewer['uid']}_{student_uid}").delete()
     return {"status": "unlinked"}
+
+
+
+@app.post("/subjects/{subject}/snapshot")
+def save_subject_snapshot(subject: str, payload: SubjectSnapshotRequest, request: Request):
+    student = current_profile(request, {"student"})
+    if subject not in VALID_SUBJECTS or payload.subject != subject:
+        raise HTTPException(400, "Subject snapshot does not match the requested subject.")
+
+    value = {
+        "studentUid": student["uid"],
+        "accountId": profile_account_id(student),
+        "subject": subject,
+        "averageScore": (
+            round(float(payload.average_score), 2)
+            if payload.average_score is not None else None
+        ),
+        "activities": int(payload.activities),
+        "questionsAnswered": int(payload.questions_answered),
+        "minutesSpent": round(float(payload.minutes_spent), 1),
+        "lastActive": payload.last_active,
+        "metadata": payload.metadata,
+        "updatedAt": utc_now(),
+        "schemaVersion": 1,
+    }
+    subject_snapshots.document(f"{student['uid']}_{subject}").set(value, merge=True)
+    return {"status": "saved", "subject": subject}
 
 
 @app.post("/events")

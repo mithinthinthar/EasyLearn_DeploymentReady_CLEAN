@@ -1,57 +1,38 @@
-EasyLearn BM Cloud Audio Fix
+EasyLearn Math Portal Snapshot Fix
 
-WHY
-The Vercel log proves Speaking fails while downloading
-SeamlessX/malaysian-faster-whisper-small-v3-ct2:
-"No space left on device (os error 28)".
+Fixes two related integration issues:
 
-This patch removes the local production audio-model architecture.
+1) Main portal shows Mathematics as 0
+   Cause: the production Math API is mounted under /math-api, but the frontend
+   activity tracker only recognized /api/... paths. It never sent Math events
+   to the shared platform.
 
-NEW PRODUCTION FLOW
+2) Existing Aiven progress does not exist in the portal Firestore dashboard
+   Cause: Aiven is the Mathematics source of truth, while the portal summarizes
+   shared Firestore analytics.
 
-Listening:
-Gemini creates listening text/questions
- -> Firestore
- -> Gemini 3.8 Flash-Lite TTS generates WAV
- -> Vercel Blob stores/serves the WAV
- -> browser plays the Blob URL
+New design:
+Aiven Math data -> lightweight /api/student/platform-summary -> background
+frontend sync -> Firestore subject_snapshots -> main portal dashboard.
 
-Speaking:
-Browser records 5 clips
- -> BM FastAPI
- -> each REAL audio clip is sent to Gemini 3.5 Flash-Lite
- -> Gemini transcribes and assesses grammar, pronunciation, fluency, and ideas
- -> existing SpeakingSubmitResponse shape is preserved
- -> Firestore saves the result
+The sync runs AFTER successful Math login and is not awaited, so it does not
+add time to the "Opening Mathematics" screen.
 
-REMOVED FROM BM PRODUCTION DEPENDENCIES
-- PyTorch
-- faster-whisper
-- Silero VAD
-- Hugging Face Hub
-- Edge TTS
-- soundfile
-- jiwer
+DEPLOYMENTS REQUIRED
+A) Math backend (new lightweight summary endpoint)
+B) Platform/Auth backend (new subject snapshot endpoint + dashboard merge)
+C) Final frontend (tracker + background sync)
+
+No database migration is required. Firestore creates subject_snapshots
+automatically on first sync.
 
 COPY
 Copy the contents of this folder into:
 C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN
+and replace files.
 
-Choose "Replace files in destination".
 
-DEPLOY
-Only BM backend must be redeployed for this patch:
-
-cd C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN\subjects\bahasa_melayu\backend
-vercel --prod --force
-
-No frontend redeploy is required for this BM patch.
-
-ENVIRONMENT
-Existing GEMINI_API_KEY is reused.
-Optional (defaults already work):
-GEMINI_SPEAKING_MODEL=gemini-3.5-flash-lite
-GEMINI_TTS_MODEL=gemini-3.8-flash-lite-tts
-GEMINI_TTS_VOICE=Kore
-
-Make sure the public Vercel Blob store remains connected to easylearn-bm-api.
+PERCEIVED MATH SPEED
+The portal now also sends a non-blocking warm-up GET to /math-api/ after login.
+This starts the Math Vercel Function while the user is viewing the portal, so
+clicking Mathematics is less likely to wait for the full cold start.

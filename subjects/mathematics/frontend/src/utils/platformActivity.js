@@ -11,6 +11,12 @@ function findNumber(value, names) {
 }
 
 function classify(pathname) {
+  // In the combined production portal, Math is reverse-proxied under
+  // /math-api. Normalize that prefix so the same tracker works locally and
+  // after deployment.
+  if (pathname.startsWith("/math-api/")) {
+    pathname = pathname.slice("/math-api".length);
+  }
   if (pathname === "/api/practice/save-attempt") return { type: "practice", title: "Mathematics practice", questions: 1 };
   if (pathname === "/api/quick-snap/log") return { type: "quick_snap", title: "Quick Snap", questions: 1 };
   if (pathname === "/api/chat") return { type: "ai_tutor", title: "Mathematics AI Tutor", questions: 0 };

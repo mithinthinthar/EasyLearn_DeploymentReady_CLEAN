@@ -137,7 +137,7 @@ export default function UjianBertuturLatihanPage() {
   const [error, setError] = useState("");
 
   const MIN_AUDIO_SECS = 3.0;
-  const MAX_AUDIO_SECS = 300.0;
+  const MAX_AUDIO_SECS = 180.0;
 
   const [audioWarning, setAudioWarning] = useState<Record<string, string>>({});
 
@@ -273,7 +273,13 @@ export default function UjianBertuturLatihanPage() {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const recorderOptions: MediaRecorderOptions = {
+        audioBitsPerSecond: 24000,
+      };
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+        recorderOptions.mimeType = "audio/webm;codecs=opus";
+      }
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -388,8 +394,20 @@ export default function UjianBertuturLatihanPage() {
   }
 
   async function handleSubmit() {
+    const TOTAL_AUDIO_LIMIT_BYTES = 4_000_000;
     if (!allAudioCompleted()) {
       setError("Sila lengkapkan semua rakaman audio dahulu.");
+      return;
+    }
+
+    const totalAudioBytes = questions.reduce(
+      (sum, question) => sum + (question.audioFile?.size || 0),
+      0
+    );
+    if (totalAudioBytes > TOTAL_AUDIO_LIMIT_BYTES) {
+      setError(
+        "Jumlah rakaman terlalu besar untuk dihantar. Sila rakam semula menggunakan rakaman dalam aplikasi atau pendekkan rakaman."
+      );
       return;
     }
 

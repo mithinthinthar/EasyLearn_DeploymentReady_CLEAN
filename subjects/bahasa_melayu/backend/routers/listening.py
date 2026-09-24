@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional, Literal
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import database
@@ -22,6 +22,7 @@ from services.listening_service import (
     score_latihan_listening_submission,
     _hide_answer_scheme_for_frontend,
     ensure_listening_audio_file,
+    ensure_listening_audio_asset,
 )
 
 router = APIRouter()
@@ -97,10 +98,11 @@ async def start_listening(req: ListeningStartRequest):
 
 @router.get("/audio/{session_id}")
 async def get_listening_audio(session_id: str):
-    """Serve listening audio without persistent object storage.
+    """Generate listening audio on demand.
 
-    The source script lives in Firestore. If Vercel has discarded the temporary
-    MP3, regenerate it from that script and stream it back to the browser.
+    If a public Vercel Blob store is connected, the generated MP3 is uploaded
+    there and the browser is redirected to the Blob CDN URL. Otherwise the
+    existing /tmp FileResponse fallback is used.
     """
     session = database.listening_sessions_col.find_one({"session_id": session_id})
     if not session:
@@ -110,12 +112,26 @@ async def get_listening_audio(session_id: str):
     if not script:
         raise HTTPException(status_code=404, detail="Listening script not found")
 
+    existing_url = str(session.get("audio_url") or "")
+    if existing_url.startswith("https://") and "blob.vercel-storage.com" in existing_url:
+        return RedirectResponse(existing_url, status_code=307)
+
     try:
-        path = await ensure_listening_audio_file(session_id, script)
+        asset = await ensure_listening_audio_asset(session_id, script)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to generate listening audio: {exc}")
 
-    return FileResponse(path, media_type="audio/mpeg", filename=f"{session_id}.mp3")
+    if asset.startswith("http://") or asset.startswith("https://"):
+        try:
+            database.listening_sessions_col.update_one(
+                {"session_id": session_id},
+                {"$set": {"audio_url": asset}},
+            )
+        except Exception as exc:
+            print(f"Could not persist Blob audio URL: {exc}")
+        return RedirectResponse(asset, status_code=307)
+
+    return FileResponse(asset, media_type="audio/mpeg", filename=f"{session_id}.mp3")
 
 
 @router.post("/submit", response_model=ListeningSubmitResponse)

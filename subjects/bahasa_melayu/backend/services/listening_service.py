@@ -6,6 +6,11 @@ from datetime import datetime, timezone, timedelta
 from typing import List
 
 import edge_tts
+try:
+    from vercel.blob import AsyncBlobClient
+except Exception:
+    AsyncBlobClient = None
+
 from difflib import SequenceMatcher
 
 import database
@@ -461,6 +466,28 @@ async def ensure_listening_audio_file(session_id: str, script: str) -> str:
     )
     await communicate.save(str(mp3_path))
     return str(mp3_path)
+
+
+async def ensure_listening_audio_asset(session_id: str, script: str) -> str:
+    """Create audio and, when Blob is connected, return a public CDN URL."""
+    local_path = await ensure_listening_audio_file(session_id, script)
+
+    if os.getenv("BLOB_READ_WRITE_TOKEN") and AsyncBlobClient is not None:
+        try:
+            client = AsyncBlobClient()
+            audio_bytes = Path(local_path).read_bytes()
+            uploaded = await client.put(
+                f"bm-listening/{session_id}.mp3",
+                audio_bytes,
+                access="public",
+                content_type="audio/mpeg",
+                overwrite=True,
+            )
+            return uploaded.url
+        except Exception as exc:
+            print(f"Vercel Blob upload failed; falling back to Function audio response: {exc}")
+
+    return local_path
 
 
 # ─────────────────────────────────────────────────────────────────────────────

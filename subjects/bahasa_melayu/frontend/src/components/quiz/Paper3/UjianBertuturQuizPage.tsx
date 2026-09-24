@@ -115,7 +115,7 @@ export default function UjianBertuturQuizPage() {
   const chunksRef = useRef<Blob[]>([]);
   const [recordingIndex, setRecordingIndex] = useState<number | null>(null);
   const MIN_AUDIO_SECS = 3.0;
-  const MAX_AUDIO_SECS = 300.0;
+  const MAX_AUDIO_SECS = 180.0;
   const [audioWarning, setAudioWarning] = useState<Record<number, string>>({});
   // const [expandedClip, setExpandedClip] = useState<string | null>(null);
 
@@ -158,7 +158,13 @@ export default function UjianBertuturQuizPage() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      const mediaRecorder = new MediaRecorder(stream);
+      const recorderOptions: MediaRecorderOptions = {
+        audioBitsPerSecond: 24000,
+      };
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+        recorderOptions.mimeType = "audio/webm;codecs=opus";
+      }
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -351,11 +357,23 @@ export default function UjianBertuturQuizPage() {
 
   // ── Submit speaking ─────────────────────────────────────────────────
   const handleSubmit = async () => {
+    const TOTAL_AUDIO_LIMIT_BYTES = 4_000_000;
     if (!userId) return;
 
     const missing = questions.filter(q => !q.audioFile);
     if (missing.length > 0) {
       setError("Sila lengkapkan semua fail audio dahulu.");
+      return;
+    }
+
+    const totalAudioBytes = questions.reduce(
+      (sum, q) => sum + (q.audioFile?.size || 0),
+      0
+    );
+    if (totalAudioBytes > TOTAL_AUDIO_LIMIT_BYTES) {
+      setError(
+        "Jumlah rakaman terlalu besar untuk dihantar. Sila rakam semula menggunakan rakaman dalam aplikasi atau pendekkan rakaman."
+      );
       return;
     }
     

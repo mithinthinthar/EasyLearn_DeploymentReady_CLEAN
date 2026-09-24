@@ -3,7 +3,6 @@ import json
 import base64
 import copy
 import re
-import cv2
 from flask import Flask, request, jsonify, g
 from functools import wraps
 from flask_cors import CORS
@@ -19,13 +18,6 @@ import string
 import firebase_admin
 from firebase_admin import credentials
 from openai import AsyncOpenAI
-from parser import pdf_k1_parser, pdf_k2_parser, parser_common
-from parser.parser_common import (
-    insert_paper,
-    insert_question,
-    insert_marking_scheme,
-    insert_question_marking_link,
-)
 
 from solving.llm_engine import (
     solve_new_question,
@@ -74,7 +66,6 @@ from chatbot_agent import (
 )
 
 # for models
-from dashboard_intelligence import build_dashboard_intelligence
 
 # for admin firebase
 # Load backend environment variables
@@ -3887,6 +3878,7 @@ def build_study_heatmap_payload(user_id, selected_year):
 
 
 def build_student_dashboard_payload(user_id, lang="english", selected_year=None):
+    from dashboard_intelligence import build_dashboard_intelligence
     if not selected_year:
         selected_year = datetime.now().year
 
@@ -3938,6 +3930,7 @@ def build_student_dashboard_payload(user_id, lang="english", selected_year=None)
 @app.route("/api/student/dashboard/<int:student_id>", methods=["GET"])
 @require_auth("student", "parent", "admin")
 def get_student_dashboard(student_id):
+    from dashboard_intelligence import build_dashboard_intelligence
     conn = None
     cursor = None
 
@@ -4725,6 +4718,7 @@ def parentize_dashboard_data(dashboard_data, child, lang="english"):
 @app.route("/api/parent/children/<int:student_id>/dashboard", methods=["GET"])
 @require_auth("parent")
 def get_parent_child_dashboard(student_id):
+    from dashboard_intelligence import build_dashboard_intelligence
     lang = request.args.get("lang", "english")
     year = request.args.get("year", datetime.now().year)
 
@@ -7801,6 +7795,7 @@ def run_async_parser(coro):
 @app.route("/api/admin/import/k1/parse-draft", methods=["POST"])
 @require_auth("admin")
 def admin_parse_k1_pdf_to_draft():
+    from parser import pdf_k1_parser
     conn = None
     cursor = None
 
@@ -8155,6 +8150,7 @@ def admin_parse_k1_pdf_to_draft():
 @app.route("/api/admin/import/k2/parse-draft", methods=["POST"])
 @require_auth("admin")
 def admin_parse_k2_pdf_to_draft():
+    from parser import pdf_k2_parser, parser_common
     conn = None
     cursor = None
 
@@ -8358,6 +8354,10 @@ def admin_parse_k2_pdf_to_draft():
 @app.route("/api/admin/import-batches/<int:batch_id>/save-approved-k1", methods=["POST"])
 @require_auth("admin")
 def admin_save_approved_k1_import_batch(batch_id):
+    from parser.parser_common import (
+        insert_paper, insert_question, insert_marking_scheme,
+        insert_question_marking_link,
+    )
     conn = None
     cursor = None
 
@@ -8611,6 +8611,10 @@ def admin_save_approved_k1_import_batch(batch_id):
 @app.route("/api/admin/import-batches/<int:batch_id>/save-approved-k2", methods=["POST"])
 @require_auth("admin")
 def admin_save_approved_k2_import_batch(batch_id):
+    from parser.parser_common import (
+        insert_paper, insert_question, insert_marking_scheme,
+        insert_question_marking_link,
+    )
     conn = None
     cursor = None
 

@@ -31,6 +31,59 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import DisclaimerText from "../../components/DisclaimerText";
 
+
+const optimizeImageForUpload = (file) =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      try {
+        const MAX_DIMENSION = 1600;
+        const scale = Math.min(
+          1,
+          MAX_DIMENSION / Math.max(img.naturalWidth || 1, img.naturalHeight || 1)
+        );
+
+        const width = Math.max(1, Math.round(img.naturalWidth * scale));
+        const height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // JPEG drastically reduces the Base64 JSON payload. This keeps one
+        // Quick Snap image around ~1 MB in normal cases, so two-image grading
+        // remains comfortably below Vercel's 4.5 MB Function body limit.
+        let quality = 0.82;
+        let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+        while (dataUrl.length > 1_600_000 && quality > 0.52) {
+          quality -= 0.08;
+          dataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
+
+        URL.revokeObjectURL(objectUrl);
+        resolve(dataUrl);
+      } catch (error) {
+        URL.revokeObjectURL(objectUrl);
+        reject(error);
+      }
+    };
+
+    img.onerror = (error) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(error);
+    };
+
+    img.src = objectUrl;
+  });
+
 const QuickSnapPage = () => {
   const { language, t } = useLanguage();
   const isEnglish = language !== "bm";
@@ -513,19 +566,11 @@ const buildConfirmedCoordinates = () => {
     setResult(null);
 
     try {
-      const getBase64 = (file) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = (error) => reject(error);
-        });
-
-      const base64Data = await getBase64(selectedFile);
+      const base64Data = await optimizeImageForUpload(selectedFile);
 
       let base64AnswerData = null;
       if (mode === "check_my_work") {
-        base64AnswerData = await getBase64(selectedAnswerFile);
+        base64AnswerData = await optimizeImageForUpload(selectedAnswerFile);
       }
 
       let endpoint = "";

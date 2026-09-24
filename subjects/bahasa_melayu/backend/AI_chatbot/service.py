@@ -107,10 +107,8 @@ def is_greeting(message: str) -> bool:
 
 
 def generate_with_fallback(user_message: str) -> str:
-    models = [
-        "gemma-4-26b-a4b-it",
-        "gemini-2.5-flash",
-    ]
+    preferred_model = os.getenv("GEMINI_CHAT_MODEL", "gemini-3.5-flash-lite")
+    models = [preferred_model, "gemini-3.8-flash"]
 
     last_error = None
 

@@ -14,7 +14,6 @@ faster-whisper>=1.1,<2
 silero-vad>=5,<7
 edge-tts>=6,<8
 numpy>=1.26,<3
-librosa>=0.10,<1
 soundfile>=0.12,<1
 jiwer>=3,<5
 huggingface-hub>=0.25,<2

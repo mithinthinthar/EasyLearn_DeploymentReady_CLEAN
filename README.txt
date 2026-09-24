@@ -1,10 +1,12 @@
-EasyLearn BM Vercel no-storage patch
+EasyLearn BM Vercel Librosa Fix
 
-Copy the contents of this folder over the matching files in EasyLearn_DeploymentReady_CLEAN.
+Copy the contents of this folder into:
+C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN
+
+Choose "Replace files in the destination".
 
 Changes:
-- Listening scripts/questions/results remain in Firestore.
-- Listening MP3s use /tmp and are regenerated on demand through /api/listening/audio/{session_id}.
-- No FIREBASE_STORAGE_BUCKET is required.
-- Speaking uploads use Vercel /tmp instead of the read-only deployment filesystem.
-- CPU-only PyTorch is used to reduce bundle size.
+- Removes librosa from BM runtime dependencies.
+- Uses faster_whisper.decode_audio (PyAV) for audio decode/resampling.
+- Uses NumPy for frame-wise RMS energy.
+- Preserves BM speaking scoring and common browser audio formats.

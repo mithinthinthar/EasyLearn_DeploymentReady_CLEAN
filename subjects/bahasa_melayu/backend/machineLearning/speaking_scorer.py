@@ -43,8 +43,8 @@ import os, re, time, json, warnings, asyncio
 from typing import Optional, List
 
 import numpy as np
-import torch, librosa, jiwer
-from faster_whisper import WhisperModel
+import torch, jiwer
+from faster_whisper import WhisperModel, decode_audio
 from huggingface_hub import snapshot_download
 from silero_vad import load_silero_vad, get_speech_timestamps
 from google import genai
@@ -283,7 +283,7 @@ def load_audio(file_path: str) -> tuple[Optional[np.ndarray], float, Optional[st
     Loads audio file, resamples to 16 kHz mono.
     Returns (audio (or None), duration_seconds, skip_reason (None if valid)).
     """
-    audio, _ = librosa.load(file_path, sr=SAMPLE_RATE, mono=True)
+    audio = decode_audio(file_path, sampling_rate=SAMPLE_RATE)
     duration = len(audio) / SAMPLE_RATE
 
     if duration < MIN_AUDIO_SECS:
@@ -620,6 +620,30 @@ def score_grammar_vocabulary(transcription: str, purity_score: float = 1.0) -> d
 # Assessed primarily during bacaan mekanis (mechanical reading)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _frame_rms(audio: np.ndarray, frame_length: int = 2048, hop_length: int = 512) -> np.ndarray:
+    """Compute frame-wise RMS energy with NumPy only.
+
+    This replaces librosa.feature.rms so the BM Vercel deployment does not
+    require librosa/lazy-loader. Padding roughly matches librosa's centered
+    frame behavior and is sufficient for the pronunciation energy metric.
+    """
+    audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+    if audio.size == 0:
+        return np.array([], dtype=np.float32)
+
+    pad = frame_length // 2
+    padded = np.pad(audio, (pad, pad), mode="constant")
+    if padded.size < frame_length:
+        padded = np.pad(padded, (0, frame_length - padded.size), mode="constant")
+
+    values = []
+    for start in range(0, padded.size - frame_length + 1, hop_length):
+        frame = padded[start:start + frame_length]
+        values.append(float(np.sqrt(np.mean(frame * frame))))
+
+    return np.asarray(values, dtype=np.float32)
+
+
 def score_pronunciation(transcription: str, audio: np.ndarray) -> dict:
     text_lower = transcription.lower()
     words = transcription.split()
@@ -641,7 +665,7 @@ def score_pronunciation(transcription: str, audio: np.ndarray) -> dict:
         speech_quality_score = max(0.0, min(1.0, speech_quality_score))
 
     # ── ENERGY SCORE ─────────────────────────────────────
-    rms = librosa.feature.rms(y=audio)[0]
+    rms = _frame_rms(audio)
 
     if len(rms) == 0:
         energy_score_v = 0.3

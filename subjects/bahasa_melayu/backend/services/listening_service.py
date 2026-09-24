@@ -8,7 +8,6 @@ from typing import List
 import edge_tts
 
 import database
-from firebase_admin import storage
 from services.agentic_gemini import _ask_gemini, OutputSchema
 from services.user_results_memory import update_result
 
@@ -436,23 +435,31 @@ async def synthesize_listening_audio(script: str, session_id: str) -> str:
 
     await communicate.save(mp3_path)
 
-    # Cloud Run containers have disposable local disks. When a Firebase Storage
-    # bucket is configured, persist the generated MP3 there and return a signed
-    # URL. Local development keeps using /audio/listening exactly as before.
-    bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", "").strip()
-    if bucket_name:
-        try:
-            bucket = storage.bucket(bucket_name)
-            blob = bucket.blob(f"bm/listening/{session_id}.mp3")
-            blob.upload_from_filename(mp3_path, content_type="audio/mpeg")
-            return blob.generate_signed_url(
-                expiration=timedelta(days=7),
-                method="GET",
-            )
-        except Exception as error:
-            print(f"WARNING: Could not persist listening audio to Cloud Storage: {error}")
+    # Vercel's local filesystem is ephemeral. We deliberately avoid Firebase
+    # Storage here so the project can remain on Firebase Spark/no-billing.
+    # The session's audio_script is persisted in Firestore, and the audio route
+    # can regenerate this MP3 on demand after a cold start.
+    if os.getenv("VERCEL"):
+        return f"/api/listening/audio/{session_id}"
 
     return f"/audio/listening/{session_id}.mp3"
+
+
+async def ensure_listening_audio_file(session_id: str, script: str) -> str:
+    """Return a playable local MP3 path, regenerating it from Firestore text if needed."""
+    mp3_path = LISTENING_AUDIO_DIR / f"{session_id}.mp3"
+    if mp3_path.exists() and mp3_path.stat().st_size > 0:
+        return str(mp3_path)
+
+    clean_script = _clean_script_for_tts(script)
+    communicate = edge_tts.Communicate(
+        text=clean_script,
+        voice=TTS_VOICE,
+        rate="-10%",
+        pitch="-5Hz",
+    )
+    await communicate.save(str(mp3_path))
+    return str(mp3_path)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

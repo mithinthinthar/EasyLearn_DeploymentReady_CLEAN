@@ -15,6 +15,8 @@ Responsibilities:
   audio_k2      — soalan KBAT 2
 """
 import uuid
+import os
+import tempfile
 import aiofiles
 from pathlib import Path
 from typing import Optional, List
@@ -78,7 +80,11 @@ def get_valid_session(session_id: str):
 
 # Temporary directory for uploaded audio files
 # Replace with AWS S3 upload in production
-AUDIO_UPLOAD_DIR = Path("uploads/audio")
+AUDIO_UPLOAD_DIR = (
+    Path(tempfile.gettempdir()) / "easylearn-speaking"
+    if os.getenv("VERCEL")
+    else Path("uploads/audio")
+)
 AUDIO_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 

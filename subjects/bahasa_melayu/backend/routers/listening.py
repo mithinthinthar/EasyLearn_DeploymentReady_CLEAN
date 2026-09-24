@@ -1,6 +1,7 @@
 import uuid
 from typing import List, Optional, Literal
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import database
@@ -20,6 +21,7 @@ from services.listening_service import (
     score_listening_submission,
     score_latihan_listening_submission,
     _hide_answer_scheme_for_frontend,
+    ensure_listening_audio_file,
 )
 
 router = APIRouter()
@@ -89,6 +91,31 @@ async def start_listening(req: ListeningStartRequest):
         audio_url=data["audio_url"],
         petikans=data["petikans"],
     )
+
+
+
+
+@router.get("/audio/{session_id}")
+async def get_listening_audio(session_id: str):
+    """Serve listening audio without persistent object storage.
+
+    The source script lives in Firestore. If Vercel has discarded the temporary
+    MP3, regenerate it from that script and stream it back to the browser.
+    """
+    session = database.listening_sessions_col.find_one({"session_id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Listening session not found")
+
+    script = (session.get("audio_script") or "").strip()
+    if not script:
+        raise HTTPException(status_code=404, detail="Listening script not found")
+
+    try:
+        path = await ensure_listening_audio_file(session_id, script)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to generate listening audio: {exc}")
+
+    return FileResponse(path, media_type="audio/mpeg", filename=f"{session_id}.mp3")
 
 
 @router.post("/submit", response_model=ListeningSubmitResponse)
@@ -181,6 +208,12 @@ async def retry_listening(req: ListeningRetryRequest):
             raise HTTPException(status_code=404, detail="Original session not found")
 
         new_session_id = str(uuid.uuid4())
+        old_audio_url = old_session.get("audio_url", "")
+        new_audio_url = (
+            f"/api/listening/audio/{new_session_id}"
+            if old_audio_url.startswith("/api/listening/audio/")
+            else old_audio_url
+        )
 
         database.listening_sessions_col.insert_one({
             "session_id": new_session_id,
@@ -189,7 +222,7 @@ async def retry_listening(req: ListeningRetryRequest):
             "difficulty": old_session.get("difficulty", "medium"),
             "tema": old_session.get("tema"),
             "audio_script": old_session.get("audio_script"),
-            "audio_url": old_session.get("audio_url"),
+            "audio_url": new_audio_url,
             "petikans": old_session.get("petikans", []),
             "mode": old_session.get("mode", "quiz"),
             "status": "in_progress",
@@ -204,7 +237,7 @@ async def retry_listening(req: ListeningRetryRequest):
 
         safe = _hide_answer_scheme_for_frontend({
             **old_session,
-            "audio_url": old_session.get("audio_url"),
+            "audio_url": new_audio_url,
         })
 
         return ListeningStartResponse(
@@ -216,7 +249,7 @@ async def retry_listening(req: ListeningRetryRequest):
             instructions=meta["instructions"],
             time_limit_minutes=meta["time_limit_minutes"],
             tema=old_session.get("tema", ""),
-            audio_url=old_session.get("audio_url", ""),
+            audio_url=new_audio_url,
             petikans=safe["petikans"],
         )
 

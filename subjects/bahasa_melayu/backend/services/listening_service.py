@@ -5,16 +5,16 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List
 
-import edge_tts
+import base64
 try:
-    from vercel.blob import AsyncBlobClient
+    from vercel import blob
 except Exception:
-    AsyncBlobClient = None
+    blob = None
 
 from difflib import SequenceMatcher
 
 import database
-from services.agentic_gemini import _ask_gemini, OutputSchema
+from services.agentic_gemini import _ask_gemini, OutputSchema, get_client
 from services.user_results_memory import update_result
 
 
@@ -419,73 +419,84 @@ def _detect_pcm_rate(mime_type: str) -> int:
     return 24000
 
 
-async def synthesize_listening_audio(script: str, session_id: str) -> str:
-    """
-    Converts generated listening script into spoken audio using Edge TTS.
-    Saves as .mp3 and returns URL path.
-    """
+async def _generate_gemini_tts_wav(script: str, session_id: str) -> str:
+    """Generate the SPM listening recording with Gemini TTS and save it in /tmp."""
     clean_script = _clean_script_for_tts(script)
+    wav_path = LISTENING_AUDIO_DIR / f"{session_id}.wav"
 
-    print("\n========== AUDIO SCRIPT START ==========")
-    print(clean_script[:3000])
-    print("========== AUDIO SCRIPT END ==========\n")
-
-    mp3_path = str(LISTENING_AUDIO_DIR / f"{session_id}.mp3")
-
-    communicate = edge_tts.Communicate(
-        text=clean_script,
-        voice=TTS_VOICE,
-        rate="-10%",
-        pitch="-5Hz",
+    interaction = get_client().interactions.create(
+        model=os.getenv("GEMINI_TTS_MODEL", "gemini-3.8-flash-lite-tts"),
+        input=[{
+            "type": "user_input",
+            "content": [{
+                "type": "text",
+                "text": clean_script,
+                "annotations": [{
+                    "type": "speech_metadata",
+                    "style": (
+                        "Bahasa Melayu Malaysia yang formal, jelas dan sederhana perlahan, "
+                        "seperti rakaman Ujian Mendengar SPM. Sebut teks secara tepat."
+                    ),
+                }],
+            }],
+        }],
+        response_format={"type": "audio", "mime_type": "audio/wav"},
+        generation_config={
+            "speech_config": [{"voice": os.getenv("GEMINI_TTS_VOICE", "Kore")}],
+        },
     )
 
-    await communicate.save(mp3_path)
+    if not interaction.output_audio or not interaction.output_audio.data:
+        raise RuntimeError("Gemini TTS returned no audio")
 
-    # Vercel's local filesystem is ephemeral. We deliberately avoid Firebase
-    # Storage here so the project can remain on Firebase Spark/no-billing.
-    # The session's audio_script is persisted in Firestore, and the audio route
-    # can regenerate this MP3 on demand after a cold start.
+    wav_path.write_bytes(base64.b64decode(interaction.output_audio.data))
+    return str(wav_path)
+
+
+async def synthesize_listening_audio(script: str, session_id: str) -> str:
+    """Local/dev helper. In production the audio endpoint uploads the WAV to Blob."""
+    path = await _generate_gemini_tts_wav(script, session_id)
+
     if os.getenv("VERCEL"):
         return f"/api/listening/audio/{session_id}"
 
-    return f"/audio/listening/{session_id}.mp3"
+    return f"/audio/listening/{session_id}.wav"
 
 
 async def ensure_listening_audio_file(session_id: str, script: str) -> str:
-    """Return a playable local MP3 path, regenerating it from Firestore text if needed."""
-    mp3_path = LISTENING_AUDIO_DIR / f"{session_id}.mp3"
-    if mp3_path.exists() and mp3_path.stat().st_size > 0:
-        return str(mp3_path)
+    wav_path = LISTENING_AUDIO_DIR / f"{session_id}.wav"
+    if wav_path.exists() and wav_path.stat().st_size > 0:
+        return str(wav_path)
+    return await _generate_gemini_tts_wav(script, session_id)
 
-    clean_script = _clean_script_for_tts(script)
-    communicate = edge_tts.Communicate(
-        text=clean_script,
-        voice=TTS_VOICE,
-        rate="-10%",
-        pitch="-5Hz",
-    )
-    await communicate.save(str(mp3_path))
-    return str(mp3_path)
+
+def _blob_url(uploaded) -> str | None:
+    if uploaded is None:
+        return None
+    if isinstance(uploaded, dict):
+        return uploaded.get("url")
+    return getattr(uploaded, "url", None)
 
 
 async def ensure_listening_audio_asset(session_id: str, script: str) -> str:
-    """Create audio and, when Blob is connected, return a public CDN URL."""
+    """Generate WAV and upload it to Vercel Blob when the store is connected."""
     local_path = await ensure_listening_audio_file(session_id, script)
 
-    if os.getenv("BLOB_READ_WRITE_TOKEN") and AsyncBlobClient is not None:
+    # New Vercel Blob stores can authenticate using project OIDC automatically,
+    # while older stores use BLOB_READ_WRITE_TOKEN. The Python SDK handles both.
+    if os.getenv("VERCEL") and blob is not None:
         try:
-            client = AsyncBlobClient()
-            audio_bytes = Path(local_path).read_bytes()
-            uploaded = await client.put(
-                f"bm-listening/{session_id}.mp3",
-                audio_bytes,
+            uploaded = blob.upload_file(
+                local_path=local_path,
+                path=f"bm-listening/{session_id}.wav",
                 access="public",
-                content_type="audio/mpeg",
-                overwrite=True,
             )
-            return uploaded.url
+            url = _blob_url(uploaded)
+            if url:
+                return url
+            print(f"Vercel Blob upload returned no URL: {uploaded!r}")
         except Exception as exc:
-            print(f"Vercel Blob upload failed; falling back to Function audio response: {exc}")
+            print(f"Vercel Blob upload failed; using direct WAV response: {exc}")
 
     return local_path
 

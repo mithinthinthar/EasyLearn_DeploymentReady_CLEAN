@@ -131,7 +131,9 @@ async def get_listening_audio(session_id: str):
             print(f"Could not persist Blob audio URL: {exc}")
         return RedirectResponse(asset, status_code=307)
 
-    return FileResponse(asset, media_type="audio/mpeg", filename=f"{session_id}.mp3")
+    media_type = "audio/wav" if str(asset).lower().endswith(".wav") else "audio/mpeg"
+    filename = f"{session_id}.wav" if media_type == "audio/wav" else f"{session_id}.mp3"
+    return FileResponse(asset, media_type=media_type, filename=filename)
 
 
 @router.post("/submit", response_model=ListeningSubmitResponse)

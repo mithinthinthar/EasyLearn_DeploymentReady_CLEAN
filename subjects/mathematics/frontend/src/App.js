@@ -24,36 +24,38 @@ ensureLocalGuestUser();
 installMathematicsActivityTracker();
 
 const IS_LOCAL = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-const PORTAL_URL = process.env.REACT_APP_PORTAL_URL || (IS_LOCAL ? "http://localhost:4000" : "/");
+const PORTAL_URL =
+  process.env.REACT_APP_PORTAL_URL ||
+  (IS_LOCAL ? "http://localhost:4000" : "/");
 
 function currentRoute() {
   return window.location.hash.replace(/^#/, "") || "/";
 }
 
-function replaceRoute(path) {
-  window.location.replace(`${window.location.pathname}${window.location.search}#${path}`);
+function replaceRouteWithoutReload(path) {
+  const nextUrl = `${window.location.pathname}${window.location.search}#${path}`;
+  window.history.replaceState(null, "", nextUrl);
+
+  // HashRouter needs a hashchange notification when history.replaceState()
+  // changes the URL before the Router mounts.
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
 }
 
 const headingStyle = {
   fontFamily: '"Lexend", sans-serif',
 };
 
-const headingVariants = [
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-].reduce((styles, variant) => {
-  styles[variant] = headingStyle;
-  return styles;
-}, {});
+const headingVariants = ["h1", "h2", "h3", "h4", "h5", "h6"].reduce(
+  (styles, variant) => {
+    styles[variant] = headingStyle;
+    return styles;
+  },
+  {},
+);
 
 const theme = createTheme({
   typography: {
-    fontFamily:
-      '"Quicksand", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Quicksand", "Roboto", "Helvetica", "Arial", sans-serif',
     ...headingVariants,
   },
 
@@ -84,21 +86,16 @@ function LoadingAccount() {
       }}
     >
       <div>
-        <h2 style={{ marginBottom: "8px" }}>
-          Opening Mathematics
-        </h2>
+        <h2 style={{ marginBottom: "8px" }}>Opening Mathematics</h2>
 
-        <p style={{ margin: 0 }}>
-          Connecting to your EasyLearn account...
-        </p>
+        <p style={{ margin: 0 }}>Connecting to your EasyLearn account...</p>
       </div>
     </div>
   );
 }
 
 function App() {
-  const [authenticationChecked, setAuthenticationChecked] =
-    useState(false);
+  const [authenticationChecked, setAuthenticationChecked] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -112,14 +109,18 @@ function App() {
         }
 
         if (result.status === "signed-in") {
-          const destination = getMathematicsHome(
-            result.user.role,
-          );
+          const destination = getMathematicsHome(result.user.role);
 
+          // IMPORTANT:
+          // A hash-only location.replace() does not reload the React app.
+          // The previous code returned here before setting
+          // authenticationChecked=true, leaving the loading screen forever.
           if (currentRoute() !== destination) {
-            replaceRoute(destination);
-            return;
+            replaceRouteWithoutReload(destination);
           }
+
+          setAuthenticationChecked(true);
+          return;
         }
 
         if (result.status === "no-portal-session") {
@@ -131,17 +132,14 @@ function App() {
           result.status === "math-account-not-found" &&
           currentRoute() !== "/auth"
         ) {
-          replaceRoute("/auth");
+          replaceRouteWithoutReload("/auth");
+          setAuthenticationChecked(true);
           return;
         }
 
         setAuthenticationChecked(true);
       } catch (error) {
-        console.error(
-          "EasyLearn shared Mathematics login failed:",
-          error,
-        );
-
+        console.error("EasyLearn shared Mathematics login failed:", error);
         window.location.replace(PORTAL_URL);
       }
     }

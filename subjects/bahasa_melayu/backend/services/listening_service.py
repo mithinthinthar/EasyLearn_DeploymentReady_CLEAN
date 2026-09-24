@@ -440,7 +440,7 @@ async def _generate_gemini_tts_wav(script: str, session_id: str) -> str:
                 }],
             }],
         }],
-        response_format={"type": "audio", "mime_type": "audio/wav"},
+        response_format={"type": "audio"},
         generation_config={
             "speech_config": [{"voice": os.getenv("GEMINI_TTS_VOICE", "Kore")}],
         },
@@ -615,11 +615,24 @@ async def generate_listening_session(
     data["audio_script"] = clean_script
     data["difficulty"] = difficulty
 
-    # On Vercel, do not block the whole quiz creation on TTS/network I/O.
-    # Save the generated script/questions first; the /audio/{session_id} route
-    # will create the temporary MP3 only when the browser actually plays it.
+    # Generate the listening audio before returning the session whenever possible.
+    # This means the frontend receives a real playable Blob/CDN URL instead of
+    # starting the quiz and only then discovering that audio generation failed.
     if os.getenv("VERCEL"):
-        audio_url = f"/api/listening/audio/{session_id}"
+        try:
+            audio_asset = await ensure_listening_audio_asset(
+                session_id=session_id,
+                script=clean_script,
+            )
+            if str(audio_asset).startswith(("http://", "https://")):
+                audio_url = str(audio_asset)
+            else:
+                # Blob is unavailable: keep the direct Function audio endpoint
+                # as a fallback.
+                audio_url = f"/api/listening/audio/{session_id}"
+        except Exception as exc:
+            print(f"Listening audio pre-generation failed: {exc}")
+            audio_url = f"/api/listening/audio/{session_id}"
     else:
         audio_url = await synthesize_listening_audio(
             script=clean_script,

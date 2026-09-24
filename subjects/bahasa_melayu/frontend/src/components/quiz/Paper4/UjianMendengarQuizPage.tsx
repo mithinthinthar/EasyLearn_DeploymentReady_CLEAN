@@ -86,6 +86,8 @@ export default function UjianMendengarQuizPage() {
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [audioPlayed, setAudioPlayed] = useState<boolean>(false);
   const [audioPlaying, setAudioPlaying] = useState<boolean>(false);
+  const [audioReady, setAudioReady] = useState<boolean>(false);
+  const [audioError, setAudioError] = useState<string>("");
 
   const calledOnce = useRef(false);
 
@@ -129,6 +131,10 @@ export default function UjianMendengarQuizPage() {
         };
         setSessionId(data.session_id);
         setTema(data.tema || "");
+        setAudioReady(false);
+        setAudioError("");
+        setAudioPlaying(false);
+        setAudioPlayed(false);
         setAudioUrl(resolveAudioUrl(data.audio_url));
         setPetikans(data.petikans || []);
         setLoading(false);
@@ -145,7 +151,11 @@ export default function UjianMendengarQuizPage() {
           const data = await res.json();
           setSessionId(data.session_id);
           setTema(data.tema || "");
-          setAudioUrl(resolveAudioUrl(data.audio_url));
+          setAudioReady(false);
+        setAudioError("");
+        setAudioPlaying(false);
+        setAudioPlayed(false);
+        setAudioUrl(resolveAudioUrl(data.audio_url));
           setPetikans(data.petikans || []);
           setLoading(false);
           return;
@@ -289,22 +299,29 @@ export default function UjianMendengarQuizPage() {
         <audio
           ref={audioRef}
           src={audioUrl}
+          preload="auto"
           onLoadedMetadata={() => {
             if (audioRef.current) {
-              setAudioDuration(audioRef.current.duration);
+              const duration = audioRef.current.duration;
+              if (Number.isFinite(duration)) {
+                setAudioDuration(duration);
+              }
             }
           }}
+          onCanPlay={() => {
+            setAudioReady(true);
+            setAudioError("");
+          }}
           onPlay={() => setAudioPlaying(true)}
+          onPause={() => setAudioPlaying(false)}
           onEnded={() => {
             setAudioPlaying(false);
             setAudioPlayed(true);
           }}
-          onTimeUpdate={() => {
-            if (audioRef.current && audioRef.current.currentTime > lastTimeRef.current + 0.5) {
-              audioRef.current.currentTime = lastTimeRef.current;
-            } else if (audioRef.current && !audioRef.current.paused) {
-              lastTimeRef.current = audioRef.current.currentTime;
-            }
+          onError={() => {
+            setAudioReady(false);
+            setAudioPlaying(false);
+            setAudioError("Audio gagal dimuatkan. Sila jana semula ujian.");
           }}
         />
 
@@ -312,10 +329,17 @@ export default function UjianMendengarQuizPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <button
               className="button1"
-              disabled={audioPlaying || audioPlayed}
-              onClick={() => {
+              disabled={!audioReady || audioPlaying || audioPlayed}
+              onClick={async () => {
                 if (audioRef.current && audioRef.current.paused) {
-                  audioRef.current.play();
+                  try {
+                    setAudioError("");
+                    await audioRef.current.play();
+                  } catch (err) {
+                    console.error("Listening audio playback failed:", err);
+                    setAudioPlaying(false);
+                    setAudioError("Audio tidak dapat dimainkan. Sila jana semula ujian.");
+                  }
                 }
               }}
             >
@@ -323,6 +347,8 @@ export default function UjianMendengarQuizPage() {
                 ? "✔ Audio Telah Dimainkan"
                 : audioPlaying
                 ? "🔊 Sedang Dimainkan..."
+                : !audioReady
+                ? "⏳ Memuatkan Audio..."
                 : "▶ Main Audio"}
             </button>
 
@@ -347,6 +373,12 @@ export default function UjianMendengarQuizPage() {
             <source src={audioUrl} type="audio/mpeg" />
             Browser anda tidak menyokong audio.
           </audio> */}
+
+          {audioError && (
+            <p style={{ marginTop: "10px", color: "#dc2626", fontWeight: 600 }}>
+              {audioError}
+            </p>
+          )}
 
           <p style={{ marginTop: "10px" }}>
             *Sila main audio sebelum menjawab.

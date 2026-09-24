@@ -324,8 +324,13 @@ export default function UjianMendengarLatihanPage() {
         <div className="chapter-card card-base" style={{ marginBottom: "25px" }}>
           <h2>{t("audio")}</h2>
 
-          <audio controls style={{ width: "100%" }}>
-            <source src={audioUrl} type="audio/mpeg" />
+          <audio
+            controls
+            preload="auto"
+            src={audioUrl}
+            style={{ width: "100%" }}
+          >
+            Browser anda tidak menyokong audio.
           </audio>
 
           <p style={{ marginTop: "10px" }}>{t("listenBeforeAnswering")}</p>

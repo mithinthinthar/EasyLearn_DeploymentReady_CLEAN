@@ -1,18 +1,18 @@
-EasyLearn Platform CRC32 Vercel Fix
+EasyLearn BM Listening Playback Fix
 
-Copy the `shared` folder into:
-C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN
+What this fixes
+1. Gemini 3.8 TTS now uses the official unary response_format={"type":"audio"}.
+   Gemini 3.8 unary TTS returns a complete WAV file.
+2. The backend attempts to create/upload the WAV before returning the listening
+   session, so the frontend receives a direct Blob URL whenever possible.
+3. The Quiz player no longer rewinds itself through onTimeUpdate.
+   The custom one-play button already prevents ordinary seeking.
+4. The Quiz waits until the browser reports canplay before enabling Play and
+   displays an actual audio-load/playback error.
+5. Listening Practice no longer hardcodes type="audio/mpeg" for a WAV file.
 
-Choose "Replace files in destination".
+Deployments required
+- BM backend
+- Final frontend
 
-Then, from shared\auth, remove any stale uv lock files before redeploying:
-
-Remove-Item .\uv.lock -ErrorAction SilentlyContinue
-Remove-Item .\pyproject.toml -ErrorAction SilentlyContinue
-
-IMPORTANT:
-Only run the second command if pyproject.toml was not intentionally created by you
-for this Platform API. The original EasyLearn shared/auth service uses requirements.txt.
-
-Then deploy:
-vercel --prod --force
+No Math API or Platform API change is required for this listening fix.

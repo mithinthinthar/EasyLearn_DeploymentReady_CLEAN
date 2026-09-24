@@ -19,6 +19,11 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
+# Vercel function source is read-only at runtime; model caches must use /tmp.
+if os.getenv("VERCEL"):
+    os.environ.setdefault("HF_HOME", "/tmp/huggingface")
+
+
 # Gemini is optional during local development.
 gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
 client = genai.Client(api_key=gemini_api_key) if gemini_api_key else None

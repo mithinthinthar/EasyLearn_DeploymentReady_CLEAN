@@ -1,43 +1,23 @@
-# ── Web Framework ─────────────────────────────────────────────────────────────
-fastapi
-uvicorn
-
-# ── Data Validation ───────────────────────────────────────────────────────────
-pydantic
-email-validator
-
-# ── AI / ML ───────────────────────────────────────────────────────────────────
-openai                         # GPT-4 API (essay scoring + question generation)
-google-genai                   # Replacing GPT-4 for now
-transformers                   # XLM-RoBERTa (essay grading model)
-torch                          # Required by Transformers
-sentencepiece                  # For XLM-RoBERTa tokenizer
-faster-whisper                 # Faster Whisper ASR model for speech transcription
-silero-vad                     # Voice Activity Detection (detects speech/silence in audio)
-edge-tts
-
-# ── Supporting ML libs ────────────────────────────────────────────────────────
-numpy                          # Whisper and Transformers both need this
-librosa                        # Audio loading, resampling, feature extraction
-soundfile                      # Audio file I/O used by librosa
-jiwer                          # WER / MER / WIL calculation for ASR evaluation
-datasets                       # HuggingFace Datasets — loads audio for fine-tuning
-accelerate                     # HuggingFace Accelerate — required by Trainer
-evaluate                       # HuggingFace Evaluate — WER metric during training
-langdetect                     # Language detection for text preprocessing (e.g. essays)
-
-# ── Environment ───────────────────────────────────────────────────────────────
-python-dotenv
-
-# ── File uploads (for audio/essay submission) ─────────────────────────────────
-python-multipart
-aiofiles                       # Async file I/O for saving uploaded audio files
-
-# ── System dependencies (install separately, NOT via pip) ─────────────────────
-# ffmpeg  →  required by librosa (m4a/mp4 decoding) and Whisper (audio transcription)
-#            Windows : winget install ffmpeg (run in PowerShell)
-#            macOS   : brew install ffmpeg
-#            Linux   : sudo apt install ffmpeg
-
-# ── Database (MongoDB) ───────────────────────────────────────────────────────
-firebase-admin                # EasyLearn identity and Bahasa Melayu data in Firestore
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+pydantic>=2.8,<3
+email-validator>=2,<3
+firebase-admin>=6.5,<8
+google-genai>=1,<2
+openai>=1.50,<3
+transformers>=4.45,<5
+torch>=2.2,<3
+sentencepiece>=0.2,<1
+faster-whisper>=1.1,<2
+silero-vad>=5,<7
+edge-tts>=6,<8
+numpy>=1.26,<3
+librosa>=0.10,<1
+soundfile>=0.12,<1
+jiwer>=3,<5
+huggingface-hub>=0.25,<2
+langdetect>=1.0,<2
+python-dateutil>=2.9,<3
+python-dotenv>=1,<2
+python-multipart>=0.0.12,<1
+aiofiles>=24,<26

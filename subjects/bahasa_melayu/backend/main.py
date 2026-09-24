@@ -1,6 +1,10 @@
 import os
 import asyncio
+import tempfile
 from pathlib import Path
+
+if os.getenv("VERCEL"):
+    os.environ.setdefault("HF_HOME", "/tmp/huggingface")
 
 import database
 
@@ -24,7 +28,11 @@ app = FastAPI(
 
 
 # ─── STATIC AUDIO FILES ────────────────────
-LISTENING_AUDIO_DIR = Path("uploads/listening")
+LISTENING_AUDIO_DIR = (
+    Path(tempfile.gettempdir()) / "easylearn-listening"
+    if os.getenv("VERCEL")
+    else Path("uploads/listening")
+)
 LISTENING_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount(
@@ -38,7 +46,10 @@ app.mount(
 @app.on_event("startup")
 def startup():
     database.connect_firestore()
-    asyncio.create_task(session_expiry())
+    # Vercel functions should not keep an infinite background task alive.
+    # Expiration is also checked when sessions are read.
+    if not os.getenv("VERCEL"):
+        asyncio.create_task(session_expiry())
 
 
 # ────── MIDDLEWARE ────────────────────
@@ -79,3 +90,8 @@ app.include_router(ai_router, prefix="/api/ai")
 @app.get("/")
 def root():
     return {"status": "ok", "message": "BM SPM API is running"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "bm-api"}

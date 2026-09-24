@@ -1,5 +1,6 @@
 import wave
 import os
+import tempfile
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List
@@ -16,7 +17,11 @@ from services.user_results_memory import update_result
 # CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
 
-LISTENING_AUDIO_DIR = Path("uploads/listening")
+LISTENING_AUDIO_DIR = (
+    Path(tempfile.gettempdir()) / "easylearn-listening"
+    if os.getenv("VERCEL")
+    else Path("uploads/listening")
+)
 LISTENING_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
 # Female, formal, Malaysian Malay voice

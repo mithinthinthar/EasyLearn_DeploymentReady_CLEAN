@@ -16,6 +16,7 @@ QUIZ_LABELS = {
     "pemahaman": "Pemahaman",
     "rumusan": "Rumusan",
     "lisan": "Ujian Lisan",
+    "mendengar": "Ujian Mendengar",
 }
 
 
@@ -44,7 +45,7 @@ def _normalize_timestamp(value: Any) -> datetime:
     return datetime.min
 
 
-def _normalize_result(doc: dict, source: str) -> dict:
+def _normalize_result(doc: dict, source: str, session: dict | None = None) -> dict:
     quiz_type = doc.get("quiz_type") or doc.get("task_type") or "unknown"
     label = QUIZ_LABELS.get(quiz_type, quiz_type.replace("_", " ").title())
 
@@ -65,6 +66,21 @@ def _normalize_result(doc: dict, source: str) -> dict:
 
     saved_at = _normalize_timestamp(doc.get("saved_at") or doc.get("created_at"))
 
+    # Use the actual recorded session elapsed time instead of inventing
+    # "2 minutes per question" or "20 minutes per attempt".
+    duration_minutes = 0.0
+    if session:
+        started_at = _normalize_timestamp(session.get("created_at"))
+        if (
+            started_at != datetime.min
+            and saved_at != datetime.min
+            and saved_at >= started_at
+        ):
+            duration_minutes = round(
+                max(0.0, (saved_at - started_at).total_seconds() / 60.0),
+                1,
+            )
+
     return {
         "quiz_type": quiz_type,
         "title": label,
@@ -73,6 +89,7 @@ def _normalize_result(doc: dict, source: str) -> dict:
         "questions_count": questions_count,
         "saved_at": saved_at,
         "saved_at_label": saved_at.strftime("%d %b") if saved_at != datetime.min else "-",
+        "duration_minutes": duration_minutes,
     }
 
 
@@ -83,16 +100,28 @@ def get_dashboard_overview(user_id: str = Query(..., min_length=1)):
 
     results: list[dict] = []
 
-    for source, collection in (
-        ("essay", database.essay_results_col),
-        ("comprehension", database.comprehension_results_col),
-        ("speaking", database.speaking_results_col),
+    for source, collection, session_collection in (
+        ("essay", database.essay_results_col, database.essay_sessions_col),
+        ("comprehension", database.comprehension_results_col, database.comprehension_sessions_col),
+        ("speaking", database.speaking_results_col, database.speaking_sessions_col),
+        ("listening", database.listening_results_col, database.listening_sessions_col),
     ):
         if collection is None:
             continue
 
         docs = list(collection.find({"user_id": user_id}, {"_id": 0}))
-        results.extend(_normalize_result(doc, source) for doc in docs)
+
+        sessions_by_id = {}
+        if session_collection is not None:
+            for session_doc in session_collection.find({"user_id": user_id}, {"_id": 0}):
+                session_id = session_doc.get("session_id")
+                if session_id:
+                    sessions_by_id[str(session_id)] = session_doc
+
+        for doc in docs:
+            session_id = doc.get("session_id")
+            session = sessions_by_id.get(str(session_id)) if session_id else None
+            results.append(_normalize_result(doc, source, session))
 
     results.sort(key=lambda item: item["saved_at"])
 
@@ -106,6 +135,7 @@ def get_dashboard_overview(user_id: str = Query(..., min_length=1)):
                 "predicted_percentage": None,
                 "confidence": "low",
                 "total_attempts": 0,
+                "total_study_minutes": 0.0,
             },
             "trend": [],
             "activity": [],
@@ -183,6 +213,7 @@ def get_dashboard_overview(user_id: str = Query(..., min_length=1)):
                 "percentage": daily_average,
                 "grade": _grade_from_percentage(daily_average),
                 "attempts": len(day_results),
+                "minutes": round(sum(float(item.get("duration_minutes") or 0) for item in day_results), 1),
                 "full_date": full_date,
                 "topics": sorted({item["title"] for item in day_results}),
             }
@@ -191,7 +222,12 @@ def get_dashboard_overview(user_id: str = Query(..., min_length=1)):
     daily_trend.sort(key=lambda item: item["date"])
     trend = daily_trend[-7:]
     activity = [
-        {"date": item["date"], "attempts": item["attempts"], "minutes": item["attempts"] * 20, "percentage": item["percentage"]}
+        {
+            "date": item["date"],
+            "attempts": item["attempts"],
+            "minutes": item["minutes"],
+            "percentage": item["percentage"],
+        }
         for item in daily_trend if item["date"] != "Unknown"
     ]
 
@@ -206,6 +242,10 @@ def get_dashboard_overview(user_id: str = Query(..., min_length=1)):
             "predicted_percentage": predicted_percentage,
             "confidence": confidence,
             "total_attempts": total_attempts,
+            "total_study_minutes": round(
+                sum(float(item.get("duration_minutes") or 0) for item in results),
+                1,
+            ),
         },
         "trend": trend,
         "activity": activity,

@@ -1,25 +1,46 @@
-EasyLearn — Common Vercel google-crc32c Fix
+EasyLearn Real Study Time Fix — Bahasa Melayu + History
 
-Copy the `shared` and `subjects` folders into:
-C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN
+WHAT WAS WRONG
 
-Choose "Replace files in destination".
+Bahasa Melayu:
+- Total Study Time = total_questions * 2
+- Each completed result/day = attempts * 20 minutes
+So 14 questions became 28 minutes, and 4 attempts became 80 minutes.
 
-WHY
-Fresh Vercel Python deployments are currently resolving google-crc32c==1.9.0,
-but that build is failing on Vercel Linux x86_64. This patch explicitly pins
-google-crc32c==1.8.0, which has a CPython 3.12 manylinux x86_64 wheel.
+History:
+- Total Study Time = total_questions * 2
+- Weekly/heatmap minutes = questions_answered * 2
 
-IMPORTANT
-You do NOT need to redeploy every backend just because these files changed.
+Those numbers were estimates, not measured study time.
 
-Redeploy only the services that need current code changes:
-1. easylearn-bm-api
-2. easylearn-platform-api
-3. easylearn-math-api only if the Math snapshot backend patch has not yet
-   successfully deployed.
+WHAT THIS PATCH DOES
 
-History does not need redeployment now. Its requirements file is included only
-so a future History redeploy will not hit the same crc32c problem.
+Bahasa Melayu:
+- Uses the real session created_at and result saved_at timestamps.
+- Dashboard total/weekly/heatmap time is based on recorded session elapsed time.
+- Adds Ujian Mendengar results to the BM dashboard aggregation.
+- Removes the fake "Best study time window: 7:00 PM - 7:20 PM".
+- Keeps 20 minutes only as a RECOMMENDED future session length, not past usage.
 
-The final frontend is deployed separately after backend fixes are stable.
+History:
+- History already records real per-question duration_minutes and stores it as
+  time_taken_ms in Firestore.
+- Backend now aggregates those actual recorded durations.
+- Dashboard total/weekly/heatmap time uses that real value.
+- Older History records that have no timing field contribute 0 minutes instead
+  of inventing 2 minutes per question.
+- Removes the fake fixed 7:00 PM personalized timing claim.
+
+DEPLOYMENTS REQUIRED
+
+1) BM backend
+2) History backend
+3) Final frontend
+
+Platform API does NOT need another deployment for this patch.
+
+NOTE
+"Recorded study time" is elapsed time between starting and submitting an
+activity. It is far more truthful than a fixed estimate, but if a learner
+leaves a quiz open while away from the computer, that idle time can still be
+included. A future version can add browser active-time tracking if needed.

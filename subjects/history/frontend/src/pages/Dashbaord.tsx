@@ -16,7 +16,7 @@ interface DashboardProps { onPractice?: () => void; }
 
 const gradeFor = (score: number) => score >= 90 ? "A+" : score >= 80 ? "A" : score >= 75 ? "A-" : score >= 70 ? "B+" : score >= 65 ? "B" : score >= 60 ? "C+" : score >= 50 ? "C" : score >= 40 ? "D" : score >= 30 ? "E" : "G";
 const topicName = (chapter?: number) => TOPICS.find((topic) => topic.chapterNumber === chapter)?.subtitle || (chapter ? `Chapter ${chapter}` : "a History chapter");
-const formatMinutes = (minutes: number) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+const formatMinutes = (minutes: number) => { const value = Math.max(0, Math.round(minutes || 0)); return `${Math.floor(value / 60)}h ${value % 60}m`; };
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 export default function Dashboard({ onPractice }: DashboardProps) {
@@ -58,7 +58,7 @@ export default function Dashboard({ onPractice }: DashboardProps) {
 
   const score = data?.average_score || 0;
   const totalQuestions = data?.total_questions || 0;
-  const totalMinutes = totalQuestions * 2;
+  const totalMinutes = data?.total_minutes || 0;
   const confidence = Math.min(95, Math.round(35 + Math.sqrt(totalQuestions) * 6));
   const masteryByChapter = useMemo(() => new Map(mastery.map((item) => [item.chapter, item.mastery])), [mastery]);
   const topics = useMemo(() => TOPICS.map((topic) => ({ chapter: topic.chapterNumber, title: topic.subtitle, mastery: masteryByChapter.get(topic.chapterNumber) ?? 0, attempted: masteryByChapter.has(topic.chapterNumber) })), [masteryByChapter]);
@@ -73,26 +73,26 @@ export default function Dashboard({ onPractice }: DashboardProps) {
   const trendDirection = recentPoints.length < 2 ? "Building your baseline" : recentPoints[recentPoints.length - 1].accuracy > recentPoints[0].accuracy ? "Improving recently" : recentPoints[recentPoints.length - 1].accuracy < recentPoints[0].accuracy ? "Needs renewed focus" : "Stable recently";
   const selectedYearPoints = recentPoints.filter((point) => Number(point.date.slice(0, 4)) === selectedHeatmapYear);
   const activeDays = new Set(selectedYearPoints.map((point) => point.date)).size;
-  const weeklyQuestions = recentPoints.filter((point) => Date.now() - new Date(`${point.date}T00:00:00`).getTime() <= 7 * 86400000).reduce((sum, point) => sum + point.questions_answered, 0);
-  const weeklyMinutes = weeklyQuestions * 2;
+  const weeklyPoints = recentPoints.filter((point) => Date.now() - new Date(`${point.date}T00:00:00`).getTime() <= 7 * 86400000);
+  const weeklyMinutes = weeklyPoints.reduce((sum, point) => sum + (point.minutes || 0), 0);
   const weeklyTarget = 3;
   const completedSessions = Math.min(weeklyTarget, recentPoints.filter((point) => Date.now() - new Date(`${point.date}T00:00:00`).getTime() <= 7 * 86400000).length);
   const heatmap = useMemo(() => {
-    const activity = new Map((data?.history || []).map((point) => [point.date, point.questions_answered]));
+    const activity = new Map((data?.history || []).map((point) => [point.date, point]));
     const firstDay = new Date(selectedHeatmapYear, 0, 1);
     const leadingCells = (firstDay.getDay() + 6) % 7;
     const daysInYear = Math.round((new Date(selectedHeatmapYear + 1, 0, 1).getTime() - firstDay.getTime()) / 86400000);
     const leading = Array.from({ length: leadingCells }, (_, index) => ({ key: `leading-${index}`, date: "", count: 0, minutes: 0, level: 0, placeholder: true }));
     const days = Array.from({ length: daysInYear }, (_, index) => {
       const date = new Date(selectedHeatmapYear, 0, index + 1);
-      const key = dateKey(date); const count = activity.get(key) || 0;
-      return { key, date: key, count, minutes: count * 2, level: count === 0 ? 0 : count < 4 ? 1 : count < 8 ? 2 : count < 15 ? 3 : 4, placeholder: false };
+      const key = dateKey(date); const point = activity.get(key); const count = point?.questions_answered || 0; const minutes = point?.minutes || 0;
+      return { key, date: key, count, minutes, level: minutes === 0 ? 0 : minutes < 10 ? 1 : minutes < 20 ? 2 : minutes < 40 ? 3 : 4, placeholder: false };
     });
     const trailingCells = (7 - ((leading.length + days.length) % 7)) % 7;
     const trailing = Array.from({ length: trailingCells }, (_, index) => ({ key: `trailing-${index}`, date: "", count: 0, minutes: 0, level: 0, placeholder: true }));
     return [...leading, ...days, ...trailing];
   }, [data?.history, selectedHeatmapYear]);
-  const bestDayMinutes = Math.max(0, ...selectedYearPoints.map((point) => point.questions_answered * 2));
+  const bestDayMinutes = Math.max(0, ...selectedYearPoints.map((point) => point.minutes || 0));
 
   if (portalUser?.role !== "student") return <main className="history-dashboard"><section className="history-role-panel"><p>{portalUser?.role?.toUpperCase()} VIEW</p><h1>History performance is read-only</h1><span>Use the main EasyLearn dashboard to choose a student and compare all three subjects.</span><a href={PORTAL_URL}>Open EasyLearn Dashboard</a></section></main>;
   if (loading) return <main className="history-dashboard"><div className="history-loading">Loading your History performance overview…</div></main>;
@@ -124,7 +124,7 @@ export default function Dashboard({ onPractice }: DashboardProps) {
     </section>
 
     <section className="history-panel study-insights"><h2><MathUiIcon name="calendar"/> Study Insights &amp; Personalized Schedule</h2><div className="insight-layout"><div className="learner-card"><span>Study Pattern Insight</span><strong>{activeDays >= 4 ? "Consistent Learner" : activeDays >= 2 ? "Flexible Learner" : "Building a Routine"}</strong><p>You had {activeDays} active day(s) in your recorded History activity.</p><div><b>Suggestion</b><p>Set a simple weekly target to make your revision more consistent.</p></div></div><div className="consistency-card"><div><div><span>Consistency Across the Year</span><strong>How consistently you spent time learning in the system</strong></div><div className="heatmap-controls"><b>{activeDays} active days</b><select value={selectedHeatmapYear} onChange={(event) => setSelectedHeatmapYear(Number(event.target.value))} aria-label="Consistency tracker year"><option value={currentYear}>{currentYear}</option><option value={currentYear - 1}>{currentYear - 1}</option></select></div></div><div className="heatmap-scroll"><div className="heatmap" aria-label={`${activeDays} active History study days`}>{heatmap.map((cell) => <button type="button" key={cell.key} className={`heatmap-cell level-${cell.level}${cell.placeholder ? " placeholder" : ""}`} aria-label={cell.placeholder ? undefined : `${cell.date}: ${cell.minutes} minutes`} onMouseEnter={(event) => !cell.placeholder && setHeatmapTip({ label: `${cell.date} • ${cell.minutes} min`, x: event.clientX, y: event.clientY })} onMouseMove={(event) => !cell.placeholder && setHeatmapTip({ label: `${cell.date} • ${cell.minutes} min`, x: event.clientX, y: event.clientY })} onMouseLeave={() => setHeatmapTip(null)} onFocus={(event) => { if (!cell.placeholder) { const box = event.currentTarget.getBoundingClientRect(); setHeatmapTip({ label: `${cell.date} • ${cell.minutes} min`, x: box.left + box.width / 2, y: box.top }); } }} onBlur={() => setHeatmapTip(null)}/>)}</div></div><div className="heatmap-footer"><small>Best day: {bestDayMinutes} min</small><div className="heatmap-scale" aria-label="Activity intensity"><i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/></div></div></div></div>
-      <div className="schedule-card"><div className="schedule-title"><strong>Personalized Study Schedule</strong><span>{completedSessions}/{weeklyTarget} sessions done</span></div><div className="schedule-metrics"><div><span>◷ Best study time window</span><strong>7:00 PM - 7:20 PM</strong></div><div><span>● Recommended Session Length</span><strong>20 minutes</strong></div><div><span>ϟ Weekly Target</span><strong>{weeklyTarget} sessions</strong></div></div><div className="target-progress"><span>Weekly Target Progress</span><b>{completedSessions}/{weeklyTarget} sessions done</b><i><em style={{ width: `${completedSessions / weeklyTarget * 100}%` }}/></i></div><div className="next-session"><div><span>Next Suggested Session</span><strong>Tonight · 7:00 PM → {topicName(focus?.chapter)}</strong></div><button onClick={onPractice}>Practice This Session <MathUiIcon name="play" size={14}/></button></div></div>
+      <div className="schedule-card"><div className="schedule-title"><strong>Personalized Study Schedule</strong><span>{completedSessions}/{weeklyTarget} sessions done</span></div><div className="schedule-metrics"><div><span>◷ Study timing insight</span><strong>Not enough timing data yet</strong></div><div><span>● Recommended Session Length</span><strong>20 minutes</strong></div><div><span>ϟ Weekly Target</span><strong>{weeklyTarget} sessions</strong></div></div><div className="target-progress"><span>Weekly Target Progress</span><b>{completedSessions}/{weeklyTarget} sessions done</b><i><em style={{ width: `${completedSessions / weeklyTarget * 100}%` }}/></i></div><div className="next-session"><div><span>Next Suggested Session</span><strong>Next session → {topicName(focus?.chapter)}</strong></div><button onClick={onPractice}>Practice This Session <MathUiIcon name="play" size={14}/></button></div></div>
     </section>
     {heatmapTip && <div className="history-heatmap-tooltip" style={{ left: heatmapTip.x, top: heatmapTip.y }}>{heatmapTip.label}</div>}
   </main>;

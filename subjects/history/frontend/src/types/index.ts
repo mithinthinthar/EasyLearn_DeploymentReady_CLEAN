@@ -70,11 +70,13 @@ export interface HistoryItem {
   date: string;
   accuracy: number;
   questions_answered: number;
+  minutes?: number;
 }
 
 export interface DashboardData {
   streak: number;
   average_score: number;
   total_questions: number;
+  total_minutes?: number;
   history: HistoryItem[];
 }

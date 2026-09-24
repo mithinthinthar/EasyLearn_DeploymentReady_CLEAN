@@ -5,12 +5,6 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List
 
-import base64
-try:
-    from vercel import blob
-except Exception:
-    blob = None
-
 from difflib import SequenceMatcher
 
 import database
@@ -420,37 +414,78 @@ def _detect_pcm_rate(mime_type: str) -> int:
 
 
 async def _generate_gemini_tts_wav(script: str, session_id: str) -> str:
-    """Generate the SPM listening recording with Gemini TTS and save it in /tmp."""
+    """Generate a complete WAV file with Gemini 3.8 TTS.
+
+    Uses models.generate_content instead of client.interactions so this remains
+    compatible with the google-genai 1.x SDK currently used by EasyLearn.
+    Gemini 3.8 unary TTS returns a complete WAV file (RIFF header included).
+    """
     clean_script = _clean_script_for_tts(script)
     wav_path = LISTENING_AUDIO_DIR / f"{session_id}.wav"
 
-    interaction = get_client().interactions.create(
-        model=os.getenv("GEMINI_TTS_MODEL", "gemini-3.8-flash-lite-tts"),
-        input=[{
-            "type": "user_input",
-            "content": [{
-                "type": "text",
-                "text": clean_script,
-                "annotations": [{
-                    "type": "speech_metadata",
-                    "style": (
-                        "Bahasa Melayu Malaysia yang formal, jelas dan sederhana perlahan, "
-                        "seperti rakaman Ujian Mendengar SPM. Sebut teks secara tepat."
-                    ),
-                }],
-            }],
-        }],
-        response_format={"type": "audio"},
-        generation_config={
-            "speech_config": [{"voice": os.getenv("GEMINI_TTS_VOICE", "Kore")}],
-        },
+    style = (
+        "Bahasa Melayu Malaysia yang formal, jelas dan sederhana perlahan, "
+        "seperti rakaman Ujian Mendengar SPM. Sebut teks secara tepat."
     )
 
-    if not interaction.output_audio or not interaction.output_audio.data:
-        raise RuntimeError("Gemini TTS returned no audio")
+    last_error = None
 
-    wav_path.write_bytes(base64.b64decode(interaction.output_audio.data))
-    return str(wav_path)
+    # A small retry protects against occasional transient TTS failures.
+    for attempt in range(2):
+        try:
+            response = get_client().models.generate_content(
+                model=os.getenv("GEMINI_TTS_MODEL", "gemini-3.8-flash-lite-tts"),
+                contents=[{
+                    "role": "user",
+                    "parts": [{
+                        "text": clean_script,
+                        "speech_metadata": {
+                            "style": style,
+                        },
+                    }],
+                }],
+                config={
+                    "response_modalities": ["AUDIO"],
+                    "speech_config": {
+                        "voice_config": {
+                            "voice": os.getenv("GEMINI_TTS_VOICE", "Kore"),
+                        },
+                    },
+                },
+            )
+
+            candidates = getattr(response, "candidates", None) or []
+            if not candidates:
+                raise RuntimeError("Gemini TTS returned no candidates")
+
+            content = getattr(candidates[0], "content", None)
+            parts = getattr(content, "parts", None) or []
+            if not parts:
+                raise RuntimeError("Gemini TTS returned no audio parts")
+
+            inline_data = getattr(parts[0], "inline_data", None)
+            audio_bytes = getattr(inline_data, "data", None)
+
+            if not audio_bytes:
+                raise RuntimeError("Gemini TTS returned empty audio")
+
+            # Gemini 3.8 unary TTS returns a complete WAV file.
+            wav_path.write_bytes(audio_bytes)
+
+            # Sanity check: WAV files begin with a RIFF header.
+            header = wav_path.read_bytes()[:4]
+            if header != b"RIFF":
+                raise RuntimeError(
+                    f"Gemini TTS returned unexpected audio format: {header!r}"
+                )
+
+            return str(wav_path)
+
+        except Exception as exc:
+            last_error = exc
+            print(f"Gemini TTS attempt {attempt + 1} failed: {exc}")
+
+    raise RuntimeError(f"Gemini TTS failed after retries: {last_error}")
 
 
 async def synthesize_listening_audio(script: str, session_id: str) -> str:
@@ -479,26 +514,8 @@ def _blob_url(uploaded) -> str | None:
 
 
 async def ensure_listening_audio_asset(session_id: str, script: str) -> str:
-    """Generate WAV and upload it to Vercel Blob when the store is connected."""
-    local_path = await ensure_listening_audio_file(session_id, script)
-
-    # New Vercel Blob stores can authenticate using project OIDC automatically,
-    # while older stores use BLOB_READ_WRITE_TOKEN. The Python SDK handles both.
-    if os.getenv("VERCEL") and blob is not None:
-        try:
-            uploaded = blob.upload_file(
-                local_path=local_path,
-                path=f"bm-listening/{session_id}.wav",
-                access="public",
-            )
-            url = _blob_url(uploaded)
-            if url:
-                return url
-            print(f"Vercel Blob upload returned no URL: {uploaded!r}")
-        except Exception as exc:
-            print(f"Vercel Blob upload failed; using direct WAV response: {exc}")
-
-    return local_path
+    """Return a temporary playable WAV path for the current request."""
+    return await ensure_listening_audio_file(session_id, script)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -615,24 +632,11 @@ async def generate_listening_session(
     data["audio_script"] = clean_script
     data["difficulty"] = difficulty
 
-    # Generate the listening audio before returning the session whenever possible.
-    # This means the frontend receives a real playable Blob/CDN URL instead of
-    # starting the quiz and only then discovering that audio generation failed.
+    # In Vercel production, keep the session fast and expose a stable audio URL.
+    # The /audio/{session_id} route generates a temporary WAV and returns it
+    # directly to the browser. No Blob or persistent local file is required.
     if os.getenv("VERCEL"):
-        try:
-            audio_asset = await ensure_listening_audio_asset(
-                session_id=session_id,
-                script=clean_script,
-            )
-            if str(audio_asset).startswith(("http://", "https://")):
-                audio_url = str(audio_asset)
-            else:
-                # Blob is unavailable: keep the direct Function audio endpoint
-                # as a fallback.
-                audio_url = f"/api/listening/audio/{session_id}"
-        except Exception as exc:
-            print(f"Listening audio pre-generation failed: {exc}")
-            audio_url = f"/api/listening/audio/{session_id}"
+        audio_url = f"/api/listening/audio/{session_id}"
     else:
         audio_url = await synthesize_listening_audio(
             script=clean_script,

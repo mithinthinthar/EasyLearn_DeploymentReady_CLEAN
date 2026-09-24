@@ -391,11 +391,13 @@ def get_dashboard_data():
                 "streak": 0,
                 "average_score": 0,
                 "total_questions": 0,
+                "total_minutes": 0.0,
                 "history": []
             }), 200
 
         total_correct = 0
         total_questions = len(interactions)
+        total_minutes = 0.0
         unique_activity_dates = set()
         daily_stats = {}
 
@@ -408,9 +410,34 @@ def get_dashboard_data():
                 date_str = date_obj.strftime("%Y-%m-%d")
                 unique_activity_dates.add(date_obj)
                 if date_str not in daily_stats:
-                    daily_stats[date_str] = {"correct": 0, "total": 0}
+                    daily_stats[date_str] = {
+                        "correct": 0,
+                        "total": 0,
+                        "minutes": 0.0,
+                    }
+
+                # Unified History events record actual elapsed time in
+                # time_taken_ms. Old records without timing count as zero
+                # instead of inventing two minutes per question.
+                duration_minutes = 0.0
+                try:
+                    if record.get("time_taken_ms") is not None:
+                        duration_minutes = max(
+                            0.0,
+                            float(record.get("time_taken_ms") or 0) / 60000.0,
+                        )
+                    elif record.get("duration_minutes") is not None:
+                        duration_minutes = max(
+                            0.0,
+                            float(record.get("duration_minutes") or 0),
+                        )
+                except (TypeError, ValueError):
+                    duration_minutes = 0.0
+
+                total_minutes += duration_minutes
                 daily_stats[date_str]["total"] += 1
                 daily_stats[date_str]["correct"] += is_correct
+                daily_stats[date_str]["minutes"] += duration_minutes
 
         average_score = round((total_correct / total_questions) * 100, 1) if total_questions > 0 else 0
 
@@ -436,7 +463,8 @@ def get_dashboard_data():
             history_data.append({
                 "date": date_key,
                 "accuracy": accuracy,
-                "questions_answered": stats["total"]
+                "questions_answered": stats["total"],
+                "minutes": round(stats.get("minutes", 0.0), 1),
             })
         history_data.sort(key=lambda x: x['date'])
 
@@ -444,6 +472,7 @@ def get_dashboard_data():
             "streak": streak,
             "average_score": average_score,
             "total_questions": total_questions,
+            "total_minutes": round(total_minutes, 1),
             "history": history_data
         }), 200
 

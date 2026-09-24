@@ -1,46 +1,40 @@
-EasyLearn Real Study Time Fix — Bahasa Melayu + History
+EasyLearn FINAL PENDING FIXES
+Prepared after the Vercel 100-deploy/day limit was reached.
 
-WHAT WAS WRONG
+WHY HISTORY IS CURRENTLY BROKEN
+The deployed History app.py is the old local version. It contains:
+  credentials.Certificate("sejarah-app-...json")
+That file does not exist on Vercel, so the entire Flask app fails to import.
 
-Bahasa Melayu:
-- Total Study Time = total_questions * 2
-- Each completed result/day = attempts * 20 minutes
-So 14 questions became 28 minutes, and 4 attempts became 80 minutes.
+This bundle restores the Vercel-safe History entrypoint:
+  app.py -> imports app from history_app_local.py
+and keeps Firebase environment/base64 credential loading.
 
-History:
-- Total Study Time = total_questions * 2
-- Weekly/heatmap minutes = questions_answered * 2
+HISTORY ALSO
+- uses recorded time_taken_ms for study time
+- old untimed records count as 0 min
+- frontend uses real total/weekly/heatmap minutes
+- removes the fake fixed 7 PM personalized study time
 
-Those numbers were estimates, not measured study time.
+BM
+- total study time uses recorded session elapsed time
+- weekly minutes are rounded/formatted (no 14.900000000000006m)
+- removes fake fixed 7 PM personalized study time
+- keeps Listening questions/results
+- Listening TTS uses Gemini 3.8 generate_content AUDIO
+- Listening player waits until the WAV is actually playable
 
-WHAT THIS PATCH DOES
+IMPORTANT
+CLI `vercel --prod` deploys LOCAL FILES. A Git commit is not required for that.
+Commit/push only after the final working version is confirmed so future Git
+deployments use the same code.
 
-Bahasa Melayu:
-- Uses the real session created_at and result saved_at timestamps.
-- Dashboard total/weekly/heatmap time is based on recorded session elapsed time.
-- Adds Ujian Mendengar results to the BM dashboard aggregation.
-- Removes the fake "Best study time window: 7:00 PM - 7:20 PM".
-- Keeps 20 minutes only as a RECOMMENDED future session length, not past usage.
+WHEN THE VERCEL LIMIT RESETS
+Deploy in this order, once each:
+1. History backend
+2. BM backend
+3. Platform backend only if the Math snapshot/platform patch is still pending
+4. Math backend only if its snapshot patch is still pending
+5. Final root portal ONCE
 
-History:
-- History already records real per-question duration_minutes and stores it as
-  time_taken_ms in Firestore.
-- Backend now aggregates those actual recorded durations.
-- Dashboard total/weekly/heatmap time uses that real value.
-- Older History records that have no timing field contribute 0 minutes instead
-  of inventing 2 minutes per question.
-- Removes the fake fixed 7:00 PM personalized timing claim.
-
-DEPLOYMENTS REQUIRED
-
-1) BM backend
-2) History backend
-3) Final frontend
-
-Platform API does NOT need another deployment for this patch.
-
-NOTE
-"Recorded study time" is elapsed time between starting and submitting an
-activity. It is far more truthful than a fixed estimate, but if a learner
-leaves a quiz open while away from the computer, that idle time can still be
-included. A future version can add browser active-time tracking if needed.
+Do not repeatedly redeploy while debugging. Run the local build first.

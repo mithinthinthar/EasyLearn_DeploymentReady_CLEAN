@@ -1,0 +1,439 @@
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Brain, Medal, Home, Gamepad2, LayoutDashboard, ChevronLeft, ChevronRight, Check, X, BarChart3, Clock, Trophy } from 'lucide-react';
+
+// =========================================
+// TYPES
+// =========================================
+type PageRoute = 'home' | 'game' | 'dashboard' | 'study';
+type StudyModeType = 'flashcard' | 'quiz' | 'test' | null;
+
+interface FlashcardData {
+  id: number;
+  term: string;
+  definition: string;
+}
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+interface Topic {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  flashcards: FlashcardData[];
+  questions: QuizQuestion[];
+}
+
+// =========================================
+// MOCK DATA (ENGLISH)
+// =========================================
+const TOPICS: Topic[] = [
+  {
+    id: 'ch1',
+    title: 'Chapter 1',
+    subtitle: 'Getting to Know History',
+    description: 'Introduction to historical sources, methods, and interpretations.',
+    flashcards: [
+      { id: 1, term: 'Primary Source', definition: 'Original, uninterpreted materials. Examples: Fossils, diaries, artifacts.' },
+      { id: 2, term: 'Secondary Source', definition: 'Materials that interpret or analyze primary sources. Examples: Textbooks, documentaries.' },
+      { id: 3, term: 'Oral Method', definition: 'The process of obtaining information through interviews and spoken accounts.' },
+      { id: 4, term: 'Chronology', definition: 'The arrangement of events or dates in the order of their occurrence.' },
+    ],
+    questions: [
+      {
+        id: 1,
+        question: 'Which of the following is a Primary Source?',
+        options: ['History Textbook', 'A Soldier’s Diary', 'Encyclopedia Article', 'Documentary Film'],
+        correctIndex: 1,
+        explanation: 'A diary is an original document from the time period, making it a primary source.',
+      },
+      {
+        id: 2,
+        question: 'Why might historical interpretations differ between historians?',
+        options: ['Different ideologies and sources', 'Lack of intelligence', 'History constantly changes facts', 'All of the above'],
+        correctIndex: 0,
+        explanation: 'Historians may have different perspectives, ideologies, or access to different sources.',
+      }
+    ]
+  },
+  {
+    id: 'ch2',
+    title: 'Chapter 2',
+    subtitle: 'The Ice Age',
+    description: 'Understanding physical earth changes and life during the Ice Age.',
+    flashcards: [
+      { id: 1, term: 'Miocene Epoch', definition: 'A time period believed to have occurred between 23 million and 5 million years ago.' },
+      { id: 2, term: 'Sunda Shelf', definition: 'A vast landmass that connected the islands of Southeast Asia during the Ice Age.' },
+    ],
+    questions: [
+      {
+        id: 1,
+        question: 'What was the main effect of rising global temperatures at the end of the Ice Age?',
+        options: ['Formation of volcanoes', 'Rise in sea levels', 'Extinction of all animals', 'Humans stopped hunting'],
+        correctIndex: 1,
+        explanation: 'Rising temperatures caused glaciers to melt, leading to a significant rise in global sea levels.',
+      }
+    ]
+  }
+];
+
+// =========================================
+// COMPONENTS
+// =========================================
+
+// --- Header Component ---
+const Header: React.FC<{ currentPage: PageRoute; onNavigate: (page: PageRoute) => void }> = ({ currentPage, onNavigate }) => (
+  <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div className="max-w-5xl mx-auto px-4 h-16 flex justify-between items-center">
+      {/* Logo */}
+      <div 
+        className="flex items-center gap-2 cursor-pointer group"
+        onClick={() => onNavigate('home')}
+      >
+        <div className="bg-indigo-600 text-white p-1.5 rounded-lg group-hover:bg-indigo-700 transition">
+          <BookOpen size={20} />
+        </div>
+        <span className="font-bold text-xl text-slate-800 tracking-tight">HistoryLearn</span>
+      </div>
+
+      {/* Navigation - Simple & Modern */}
+      <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+        {[
+          { id: 'home', icon: Home, label: 'Home' },
+          { id: 'game', icon: Gamepad2, label: 'Arcade' },
+          { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' }
+        ].map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onNavigate(item.id as PageRoute)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              currentPage === item.id 
+                ? 'bg-white text-indigo-600 shadow-sm' 
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <item.icon size={16} />
+            <span className="hidden sm:block">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  </header>
+);
+
+// --- Flashcard Components ---
+const FlashcardMode: React.FC<{ topic: Topic; onBack: () => void }> = ({ topic, onBack }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const cards = topic.flashcards;
+
+  const nextCard = () => { setIsFlipped(false); setTimeout(() => setCurrentIndex((i) => (i + 1) % cards.length), 200); };
+  const prevCard = () => { setIsFlipped(false); setTimeout(() => setCurrentIndex((i) => (i - 1 + cards.length) % cards.length), 200); };
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      {/* Top Nav */}
+      <div className="flex items-center justify-between mb-8">
+        <button onClick={onBack} className="text-slate-500 hover:text-slate-800 flex items-center gap-1 text-sm font-medium transition">
+          <ChevronLeft size={16} /> Back to Chapters
+        </button>
+        <span className="text-slate-400 text-sm font-mono">{currentIndex + 1} / {cards.length}</span>
+      </div>
+      
+      <div className="text-center mb-8">
+        <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">{topic.title}</h2>
+        <h1 className="text-2xl font-bold text-slate-900">{topic.subtitle}</h1>
+      </div>
+
+      {/* The Card */}
+      <div 
+        className="group perspective-1000 w-full h-80 cursor-pointer"
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <div className={`relative w-full h-full duration-500 transform-style-3d transition-all ${isFlipped ? 'rotate-y-180' : ''}`}>
+          {/* Front */}
+          <div className="absolute w-full h-full bg-white rounded-3xl border-2 border-slate-100 shadow-xl shadow-slate-200/50 p-8 flex flex-col items-center justify-center backface-hidden group-hover:border-indigo-100 transition-colors">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Term</span>
+            <h3 className="text-3xl font-bold text-slate-800 text-center">{cards[currentIndex].term}</h3>
+            <p className="text-slate-400 text-sm absolute bottom-6 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip</p>
+          </div>
+          {/* Back */}
+          <div className="absolute w-full h-full bg-indigo-600 rounded-3xl p-8 flex flex-col items-center justify-center shadow-xl rotate-y-180 backface-hidden">
+            <span className="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-6">Definition</span>
+            <p className="text-xl text-center text-white leading-relaxed font-medium">{cards[currentIndex].definition}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-6 mt-10">
+        <button onClick={prevCard} className="p-4 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition shadow-sm active:scale-95">
+          <ChevronLeft size={24} />
+        </button>
+        <button onClick={nextCard} className="p-4 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition shadow-md active:scale-95">
+          <ChevronRight size={24} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Quiz/Test Component ---
+const QuizMode: React.FC<{ topic: Topic; onBack: () => void; isTestMode?: boolean }> = ({ topic, onBack, isTestMode = false }) => {
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [score, setScore] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+
+  const question = topic.questions[currentQIndex];
+  const totalQ = topic.questions.length;
+
+  const handleOptionClick = (index: number) => {
+    if (isAnswered && !isTestMode) return;
+    setSelectedOption(index);
+  };
+
+  const handleSubmitAnswer = () => {
+    if (selectedOption === question.correctIndex) setScore(s => s + 1);
+    if (!isTestMode) { setIsAnswered(true); } else { handleNext(); }
+  };
+
+  const handleNext = () => {
+    if (currentQIndex < totalQ - 1) {
+      setCurrentQIndex(p => p + 1); setSelectedOption(null); setIsAnswered(false);
+    } else {
+      setShowResults(true);
+    }
+  };
+
+  if (showResults) {
+    const percentage = Math.round((score / totalQ) * 100);
+    return (
+      <div className="max-w-md mx-auto mt-12 p-8 bg-white rounded-3xl border border-slate-100 shadow-2xl shadow-slate-200/50 text-center">
+        <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Trophy className="text-yellow-600" size={40} />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{isTestMode ? 'Test Completed!' : 'Quiz Completed!'}</h2>
+        <p className="text-slate-500 mb-8">You have finished {topic.subtitle}.</p>
+        
+        <div className="flex justify-center items-end gap-2 mb-8">
+          <span className="text-6xl font-black text-indigo-600">{percentage}</span>
+          <span className="text-xl text-indigo-600/60 font-bold mb-2">%</span>
+        </div>
+        <p className="text-slate-600 font-medium mb-8 bg-slate-50 py-3 rounded-xl">Score: {score} / {totalQ} correct</p>
+
+        <button onClick={onBack} className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">
+          Return to Home
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+       <button onClick={onBack} className="text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-8 text-sm font-medium transition">
+        <X size={16} /> Quit {isTestMode ? 'Test' : 'Quiz'}
+      </button>
+
+      {/* Modern Progress Bar */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-full bg-indigo-600 transition-all duration-500 ease-out" style={{ width: `${((currentQIndex + 1) / totalQ) * 100}%` }}></div>
+        </div>
+        <span className="text-xs font-bold text-slate-400 min-w-[3rem]">Q {currentQIndex + 1} / {totalQ}</span>
+      </div>
+
+      <div className="mb-8">
+        <h3 className="text-xl font-bold text-slate-900 leading-tight">{question.question}</h3>
+      </div>
+
+      <div className="space-y-3 mb-8">
+        {question.options.map((option, idx) => {
+          let stateStyles = "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 text-slate-700";
+          if (isAnswered && !isTestMode) {
+             if (idx === question.correctIndex) stateStyles = "border-emerald-500 bg-emerald-50 text-emerald-900 font-medium";
+             else if (idx === selectedOption) stateStyles = "border-red-500 bg-red-50 text-red-900";
+             else stateStyles = "border-slate-100 opacity-50";
+          } else if (selectedOption === idx) {
+             stateStyles = "border-indigo-600 bg-indigo-50 text-indigo-900 font-medium shadow-sm";
+          }
+
+          return (
+            <button 
+              key={idx}
+              onClick={() => handleOptionClick(idx)}
+              disabled={isAnswered && !isTestMode}
+              className={`w-full p-4 text-left rounded-xl border-2 transition-all duration-200 flex justify-between items-center ${stateStyles}`}
+            >
+              <span>{option}</span>
+              {isAnswered && !isTestMode && idx === question.correctIndex && <Check size={20} className="text-emerald-600"/>}
+              {isAnswered && !isTestMode && idx === selectedOption && idx !== question.correctIndex && <X size={20} className="text-red-500"/>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Feedback or Next Button */}
+      <div className="min-h-[6rem]">
+        {isAnswered && !isTestMode && (
+          <div className={`p-4 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 ${selectedOption === question.correctIndex ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'}`}>
+            <p className="font-bold flex items-center gap-2">
+              {selectedOption === question.correctIndex ? 'Correct!' : 'Incorrect'}
+            </p>
+            <p className="mt-1 text-sm opacity-90 leading-relaxed">{question.explanation}</p>
+          </div>
+        )}
+
+        {(!isAnswered && !isTestMode) ? (
+          <button 
+            onClick={handleSubmitAnswer}
+            disabled={selectedOption === null}
+            className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Submit Answer
+          </button>
+        ) : (
+          <button 
+            onClick={isTestMode ? handleSubmitAnswer : handleNext}
+            disabled={isTestMode && selectedOption === null}
+            className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2"
+          >
+            {currentQIndex < totalQ - 1 ? 'Next Question' : 'View Results'} <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// =========================================
+// MAIN PAGES
+// =========================================
+
+const HomePage: React.FC<{ onStart: (topic: Topic, mode: StudyModeType) => void }> = ({ onStart }) => (
+  <main className="max-w-5xl mx-auto px-6 py-12">
+    <div className="mb-12">
+      <h1 className="text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">Welcome back, Student.</h1>
+      <p className="text-lg text-slate-500">Select a chapter below to begin your session.</p>
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-6">
+      {TOPICS.map(topic => (
+        <div key={topic.id} className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div className="mb-6">
+            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">{topic.title}</span>
+            <h2 className="text-2xl font-bold text-slate-800 mt-1 mb-2">{topic.subtitle}</h2>
+            <p className="text-slate-500 leading-relaxed">{topic.description}</p>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3 mt-auto pt-6 border-t border-slate-100">
+            {[
+              { id: 'flashcard', icon: Brain, label: 'Flashcards', color: 'blue' },
+              { id: 'quiz', icon: Check, label: 'Quick Quiz', color: 'emerald' },
+              { id: 'test', icon: Clock, label: 'Timed Test', color: 'orange' }
+            ].map(mode => (
+              <button 
+                key={mode.id}
+                onClick={() => onStart(topic, mode.id as StudyModeType)}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl transition bg-${mode.color}-50 text-${mode.color}-700 hover:bg-${mode.color}-100 hover:scale-105`}
+              >
+                <mode.icon size={22} className="mb-2 opacity-80"/>
+                <span className="text-[11px] font-bold uppercase tracking-wide">{mode.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </main>
+);
+
+const DashboardPage = () => (
+  <main className="max-w-5xl mx-auto px-6 py-12">
+    <h1 className="text-3xl font-bold text-slate-900 mb-8">Performance Overview</h1>
+    {/* Simple, modern metric cards */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      {[
+        { label: 'Average Quiz Score', value: '85%', icon: BarChart3, color: 'indigo' },
+        { label: 'Cards Mastered', value: '24 / 150', icon: Brain, color: 'emerald' },
+        { label: 'Study Streak', value: '3 Days', icon: Trophy, color: 'orange' }
+      ].map((stat, idx) => (
+        <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className={`p-4 rounded-xl bg-${stat.color}-50 text-${stat.color}-600`}>
+            <stat.icon size={24} />
+          </div>
+          <div>
+            <div className="text-sm font-medium text-slate-500">{stat.label}</div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-1">{stat.value}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+    
+    {/* Placeholder for charts */}
+    <div className="bg-slate-50 rounded-3xl p-12 border-2 border-dashed border-slate-200 text-center">
+      <p className="text-slate-500 font-medium">Detailed activity charts will appear here once you complete more sessions.</p>
+    </div>
+  </main>
+);
+
+// =========================================
+// ROOT APP
+// =========================================
+
+function App() {
+  const [currentPage, setCurrentPage] = useState<PageRoute>('home');
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [studyMode, setStudyMode] = useState<StudyModeType>(null);
+
+  const startStudy = (topic: Topic, mode: StudyModeType) => {
+    setSelectedTopic(topic); setStudyMode(mode); setCurrentPage('study');
+  };
+
+  const goHome = () => {
+    setCurrentPage('home'); setSelectedTopic(null); setStudyMode(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] font-sans text-slate-600 selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Essential CSS for 3D card flips */}
+      <style>{`
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+      `}</style>
+
+      <Header currentPage={currentPage} onNavigate={setCurrentPage} />
+
+      {currentPage === 'home' && <HomePage onStart={startStudy} />}
+      {currentPage === 'dashboard' && <DashboardPage />}
+      
+      {currentPage === 'game' && (
+        <main className="max-w-5xl mx-auto px-6 py-24 text-center">
+          <div className="inline-block p-6 bg-indigo-50 rounded-full text-indigo-500 mb-6">
+            <Gamepad2 size={48} />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">Arcade Zone</h1>
+          <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">History memory matching games are currently under development. Check back soon!</p>
+          <button onClick={goHome} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">Back Home</button>
+        </main>
+      )}
+
+      {currentPage === 'study' && selectedTopic && (
+        studyMode === 'flashcard' ? <FlashcardMode topic={selectedTopic} onBack={goHome} /> :
+        studyMode === 'quiz' ? <QuizMode topic={selectedTopic} onBack={goHome} isTestMode={false} /> :
+        studyMode === 'test' ? <QuizMode topic={selectedTopic} onBack={goHome} isTestMode={true} /> : null
+      )}
+    </div>
+  );
+}
+
+export default App;

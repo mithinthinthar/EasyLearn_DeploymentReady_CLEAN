@@ -1,0 +1,8 @@
+Flask
+flask-cors
+firebase-admin
+google-genai
+numpy
+python-dotenv
+sentence-transformers
+torch

@@ -1,0 +1,3 @@
+.history-cat-button{width:88px;height:88px;overflow:visible}
+.history-cat-button img{width:88px;height:88px;transform:scale(1.85);transform-origin:center;pointer-events:none;user-select:none}
+@media(max-width:600px){.history-cat-button{width:76px;height:76px}.history-cat-button img{width:76px;height:76px}}

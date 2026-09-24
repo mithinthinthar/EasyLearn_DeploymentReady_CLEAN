@@ -1,0 +1,280 @@
+{
+  "trained_at": "2026-05-13T09:11:17",
+  "dataset_path": "C:\\Users\\USER\\Documents\\Degree 2024-2026\\Degree Level 3 (2025)\\Degree Level 3 Sem 2\\FYP\\MathSy\\backend\\model_refinement\\synthetic_exports\\synthetic_grade_training.csv",
+  "model_path": "C:\\Users\\USER\\Documents\\Degree 2024-2026\\Degree Level 3 (2025)\\Degree Level 3 Sem 2\\FYP\\MathSy\\backend\\models\\grade_score_regressor_model.pkl",
+  "model_type": "RidgeRegressor",
+  "mode": "score_regression",
+  "split_strategy": "70% training, 15% validation, 15% testing",
+  "total_rows": 3000,
+  "training_rows": 2099,
+  "validation_rows": 451,
+  "testing_rows": 450,
+  "final_training_rows": 2550,
+  "feature_columns": [
+    "total_questions_attempted",
+    "overall_accuracy",
+    "recent_accuracy",
+    "paper1_accuracy",
+    "paper2_accuracy",
+    "score_ratio_percent",
+    "hard_accuracy_percent",
+    "avg_time_per_question",
+    "total_sessions",
+    "active_days",
+    "total_study_minutes",
+    "avg_session_minutes",
+    "study_consistency_score",
+    "max_streak",
+    "avg_topic_mastery",
+    "weak_topic_count",
+    "strong_topic_count"
+  ],
+  "target_score_column": "target_score",
+  "target_grade_column": "target_grade",
+  "grade_labels": [
+    "G",
+    "E",
+    "D",
+    "C",
+    "C+",
+    "B",
+    "B+",
+    "A-",
+    "A",
+    "A+"
+  ],
+  "grade_distribution": {
+    "G": 384,
+    "E": 259,
+    "D": 283,
+    "C": 282,
+    "C+": 315,
+    "B": 371,
+    "B+": 317,
+    "A-": 455,
+    "A": 276,
+    "A+": 58
+  },
+  "score_summary": {
+    "min": 20.0,
+    "max": 98.0,
+    "mean": 58.892,
+    "std": 16.5587
+  },
+  "candidate_model_results_validation": [
+    {
+      "model_name": "RandomForestRegressor",
+      "validation_mae": 1.4308,
+      "validation_rmse": 1.7826,
+      "validation_r2": 0.9882,
+      "validation_exact_grade_accuracy": 0.7583,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.2417,
+      "selection_score": 0.8868
+    },
+    {
+      "model_name": "ExtraTreesRegressor",
+      "validation_mae": 1.3522,
+      "validation_rmse": 1.6916,
+      "validation_r2": 0.9894,
+      "validation_exact_grade_accuracy": 0.7694,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.2306,
+      "selection_score": 0.8922
+    },
+    {
+      "model_name": "GradientBoostingRegressor",
+      "validation_mae": 1.3742,
+      "validation_rmse": 1.7298,
+      "validation_r2": 0.9889,
+      "validation_exact_grade_accuracy": 0.7849,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.2151,
+      "selection_score": 0.8972
+    },
+    {
+      "model_name": "HistGradientBoostingRegressor",
+      "validation_mae": 1.397,
+      "validation_rmse": 1.7477,
+      "validation_r2": 0.9887,
+      "validation_exact_grade_accuracy": 0.7783,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.2217,
+      "selection_score": 0.8945
+    },
+    {
+      "model_name": "AdaBoostRegressor",
+      "validation_mae": 2.1183,
+      "validation_rmse": 2.6459,
+      "validation_r2": 0.974,
+      "validation_exact_grade_accuracy": 0.6674,
+      "validation_within_one_grade_band_accuracy": 0.9978,
+      "validation_grade_band_mae": 0.3348,
+      "selection_score": 0.8407
+    },
+    {
+      "model_name": "SVR_RBF",
+      "validation_mae": 1.4504,
+      "validation_rmse": 1.8567,
+      "validation_r2": 0.9872,
+      "validation_exact_grade_accuracy": 0.765,
+      "validation_within_one_grade_band_accuracy": 0.9978,
+      "validation_grade_band_mae": 0.2373,
+      "selection_score": 0.8882
+    },
+    {
+      "model_name": "SVR_Linear",
+      "validation_mae": 1.1996,
+      "validation_rmse": 1.4907,
+      "validation_r2": 0.9918,
+      "validation_exact_grade_accuracy": 0.8093,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.1907,
+      "selection_score": 0.9093
+    },
+    {
+      "model_name": "KNeighborsRegressor",
+      "validation_mae": 2.1513,
+      "validation_rmse": 2.6886,
+      "validation_r2": 0.9732,
+      "validation_exact_grade_accuracy": 0.6652,
+      "validation_within_one_grade_band_accuracy": 0.9978,
+      "validation_grade_band_mae": 0.337,
+      "selection_score": 0.8392
+    },
+    {
+      "model_name": "RidgeRegressor",
+      "validation_mae": 1.1973,
+      "validation_rmse": 1.4921,
+      "validation_r2": 0.9917,
+      "validation_exact_grade_accuracy": 0.8093,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.1907,
+      "selection_score": 0.9093
+    },
+    {
+      "model_name": "ElasticNetRegressor",
+      "validation_mae": 1.2167,
+      "validation_rmse": 1.5344,
+      "validation_r2": 0.9913,
+      "validation_exact_grade_accuracy": 0.8093,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.1907,
+      "selection_score": 0.9089
+    },
+    {
+      "model_name": "MLPRegressor",
+      "validation_mae": 1.2972,
+      "validation_rmse": 1.642,
+      "validation_r2": 0.99,
+      "validation_exact_grade_accuracy": 0.7982,
+      "validation_within_one_grade_band_accuracy": 1.0,
+      "validation_grade_band_mae": 0.2018,
+      "selection_score": 0.9034
+    }
+  ],
+  "selected_model": "RidgeRegressor",
+  "selection_score": 0.9093,
+  "selection_strategy": "Candidate models were trained on the 70% training set and selected using the 15% validation set. The selected model was then retrained on training + validation data and evaluated once on the final 15% test set. Selection score used 40% normalized inverse MAE, 35% exact grade accuracy after score mapping, and 25% within-one-grade-band accuracy.",
+  "validation_metrics_of_selected_model": {
+    "mae": 1.1973,
+    "rmse": 1.4921,
+    "r2": 0.9917,
+    "exact_grade_accuracy": 0.8093,
+    "within_one_grade_band_accuracy": 1.0,
+    "grade_band_mae": 0.1907
+  },
+  "test_metrics": {
+    "mae": 1.1746,
+    "rmse": 1.4791,
+    "r2": 0.992,
+    "exact_grade_accuracy": 0.8,
+    "within_one_grade_band_accuracy": 1.0,
+    "grade_band_mae": 0.2
+  },
+  "cross_validation": {
+    "method": "KFold on training + validation set",
+    "folds": 5,
+    "mae_scores": [
+      1.2617,
+      1.2259,
+      1.1863,
+      1.1789,
+      1.2027
+    ],
+    "mae_mean": 1.2111,
+    "mae_std": 0.03
+  },
+  "importance_type": "absolute_linear_coefficient",
+  "feature_importance": [
+    {
+      "feature": "score_ratio_percent",
+      "importance": 8.92899
+    },
+    {
+      "feature": "avg_topic_mastery",
+      "importance": 5.6142
+    },
+    {
+      "feature": "study_consistency_score",
+      "importance": 3.90744
+    },
+    {
+      "feature": "avg_time_per_question",
+      "importance": 0.44469
+    },
+    {
+      "feature": "total_questions_attempted",
+      "importance": 0.44211
+    },
+    {
+      "feature": "total_sessions",
+      "importance": 0.43217
+    },
+    {
+      "feature": "weak_topic_count",
+      "importance": 0.20212
+    },
+    {
+      "feature": "avg_session_minutes",
+      "importance": 0.19876
+    },
+    {
+      "feature": "paper1_accuracy",
+      "importance": 0.18286
+    },
+    {
+      "feature": "overall_accuracy",
+      "importance": 0.18157
+    },
+    {
+      "feature": "strong_topic_count",
+      "importance": 0.13009
+    },
+    {
+      "feature": "total_study_minutes",
+      "importance": 0.06809
+    },
+    {
+      "feature": "paper2_accuracy",
+      "importance": 0.0548
+    },
+    {
+      "feature": "recent_accuracy",
+      "importance": 0.02214
+    },
+    {
+      "feature": "hard_accuracy_percent",
+      "importance": 0.01548
+    },
+    {
+      "feature": "active_days",
+      "importance": 0.00528
+    },
+    {
+      "feature": "max_streak",
+      "importance": 0.00425
+    }
+  ],
+  "note": "This model predicts a continuous score first, then maps the score to an SPM grade band. The 70/15/15 split separates model training, validation-based model selection, and final testing. Hidden simulation fields such as hidden_ability and persona were not used as input features."
+}

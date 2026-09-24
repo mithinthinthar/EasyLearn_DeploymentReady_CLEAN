@@ -1,0 +1,9 @@
+Flask>=3.0,<4
+flask-cors>=5,<7
+firebase-admin>=6.5,<8
+google-genai>=1,<2
+numpy>=1.26,<3
+python-dotenv>=1,<2
+sentence-transformers>=3,<6
+torch>=2.2,<3
+gunicorn>=22,<24

@@ -1,0 +1,36 @@
+# Downloaded JavaScript packages
+node_modules/
+
+# Python virtual environments
+.venv/
+venv/
+
+# Private configuration and credentials
+.env
+.env.*
+!.env.example
+firebase_service_account.json
+*firebase-adminsdk*.json
+*firebase-admin*.json
+*service-account*.json
+
+# Generated frontend output
+dist/
+build/
+
+# Generated Python files
+__pycache__/
+*.pyc
+
+# Editor and operating-system files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Deployment secrets / certificates
+*.pem
+*.key
+*.crt
+
+# Vercel local state
+.vercel/

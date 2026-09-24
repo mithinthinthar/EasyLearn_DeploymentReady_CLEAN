@@ -1,0 +1,58 @@
+[
+  {
+    "chapter": "1.1",
+    "buckets": [
+      { "id": "Raja", "label": "Raja" },
+      { "id": "Rakyat", "label": "Rakyat" },
+      { "id": "Undang-undang", "label": "Undang-undang" },
+      { "id": "Wilayah Pengaruh", "label": "Wilayah Pengaruh" }
+    ],
+    "cards": [
+      { "text": "Tonggak utama kerajaan", "target": "Raja" },
+      { "text": "Dibantu oleh pembesar", "target": "Raja" },
+      { "text": "Dianggap suci", "target": "Raja" },
+      { "text": "Raja Champa dianggap suci & dikaitkan dengan Dewa Siva", "target": "Raja" },
+      { "text": "Penduduk di sebuah wilayah", "target": "Rakyat" },
+      { "text": "setia kpd raja", "target": "Rakyat" },
+      { "text": "tidak menderhaka", "target": "Rakyat" },
+      { "text": "rakyat Srivijaya menunjuk kesetiaan dengan upacara persetiaan dan minum air sumpah", "target": "Rakyat" },
+      { "text": "Memastikan kesejahteraan negara", "target": "Undang-undang" },
+      { "text": "Sbg panduan pentadbiran", "target": "Undang-undang" },
+      { "text": "kerajaan Majapahit guna undang Kutara Menawa", "target": "Undang-undang" },
+      { "text": "kawasan yang diterima oleh rakyat", "target": "Wilayah Pengaruh" },
+      { "text": "kawasan yang rakyat memperakui pemerintahan raja", "target": "Wilayah Pengaruh" },
+      { "text": "wilayah pengaruh Funan meliputi kawasan sungai Mekong, Teluk Cam Ranh, selatan Myanmar", "target": "Wilayah Pengaruh" }
+    ]
+  },
+  {
+    "chapter": "1.2",
+    "buckets": [
+      { "id": "Kerajaan", "label": "Kerajaan" },
+      { "id": "Kedaulatan", "label": "Kedaulatan" },
+      { "id": "Undang-undang", "label": "Undang-undang" },
+      { "id": "Rakyat", "label": "Rakyat" },
+      { "id": "Lambang kebesaran", "label": "Lambang kebesaran" },
+      { "id": "Wilayah Pengaruh", "label": "Wilayah Pengaruh" }
+    ],
+    "cards": [
+      { "text": "Muncul krn ada raja", "target": "Kerajaan" },
+      { "text": "Mengamalkan Sistem Pembesar Empat Lipatan", "target": "Kerajaan" },
+      { "text": "lambang kekuasaan tertinggi dan hak mutlak sultan", "target": "Kedaulatan" },
+      { "text": "memboleh sultan memerintah rakyat dan wilayah", "target": "Kedaulatan" },
+      { "text": "Bebas drpd campur tangan kuasa asing", "target": "Kedaulatan" },
+      { "text": "kerajaan Dinasti Ming mengakui kedaulatan Melaka", "target": "Kedaulatan" },
+      { "text": "Hukum Kanun Melaka & Undang-undang Laut Melaka", "target": "Undang-undang" },
+      { "text": "Utk mengukuhkan kerajaan", "target": "Undang-undang" },
+      { "text": "Utk melindungi rakyat", "target": "Undang-undang" },
+      { "text": "Terdiri drpd org Melayu & Org Laut", "target": "Rakyat" },
+      { "text": "Taat setia kpd Sultan Melaka (takut ditimpa tulah)", "target": "Rakyat" },
+      { "text": "identiti sesebuah kerajaan", "target": "Lambang kebesaran" },
+      { "text": "simbol kedaulatan sultan", "target": "Lambang kebesaran" },
+      { "text": "nobat & cap mohor", "target": "Lambang kebesaran" },
+      { "text": "Merangkumi seluruh Semenanjung Tanah Melayu (Melayu & pantai timur Sumatera)", "target": "Wilayah Pengaruh" },
+      { "text": "Diperoleh melalui penaklukan, naungan dan perkahwinan", "target": "Wilayah Pengaruh" },
+      { "text": "Wilayah taklukan: Pahang, Kuala Linggi, Kelantan", "target": "Wilayah Pengaruh" },
+      { "text": "Wilayah Naungan: Lingga, Patani, Kedah", "target": "Wilayah Pengaruh" }
+    ]
+  }
+]

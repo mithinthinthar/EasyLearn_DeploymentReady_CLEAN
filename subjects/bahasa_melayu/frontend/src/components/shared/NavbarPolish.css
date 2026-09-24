@@ -1,0 +1,10 @@
+.dashboard-container{max-width:none!important;padding:0!important;margin:0!important}
+.el-navbar-brand>img{width:32px;height:32px;border-radius:9px;display:block}
+.el-navbar-actions,.el-profile{height:100%;align-items:center}
+.el-student-id-help{margin-left:auto;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#b3bbc8;cursor:help;transition:background .2s,color .2s}
+.el-student-id-help:hover,.el-student-id-help:focus-visible{background:#eef2ff;color:#3855c0;outline:none}
+.el-student-id-help .el-detail-info{margin:0!important;width:14px!important;height:14px!important;color:inherit}
+.el-student-id-help{position:relative}
+.el-student-id-help:where(:hover,:focus-visible):after{content:attr(data-tooltip);position:absolute;right:-8px;bottom:calc(100% + 9px);z-index:150;width:230px;padding:8px 10px;border-radius:8px;background:#111827;color:#fff;font:600 11px/1.35 'Quicksand',sans-serif;box-shadow:0 8px 22px rgba(15,23,42,.2)}
+.el-profile-menu{right:0!important}
+.dashboard-container .bm-standard-dashboard{padding-top:24px!important}

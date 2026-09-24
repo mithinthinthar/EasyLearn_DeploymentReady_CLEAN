@@ -1,0 +1,219 @@
+{
+  "trained_at": "2026-05-13T09:13:37",
+  "data_source": "db",
+  "csv_path": null,
+  "model_type": "KMeans",
+  "selected_k": 5,
+  "selection_reason": "K=5 is intentionally selected to support five interpretable student-facing study pattern personas in the dashboard.",
+  "silhouette_score": 0.178,
+  "davies_bouldin_score": 1.713,
+  "calinski_harabasz_score": 688.0422,
+  "candidate_results": [
+    {
+      "k": 3,
+      "silhouette_score": 0.2448,
+      "davies_bouldin_score": 1.5082,
+      "calinski_harabasz_score": 919.4895,
+      "selected_for_dashboard": false
+    },
+    {
+      "k": 4,
+      "silhouette_score": 0.1798,
+      "davies_bouldin_score": 1.7377,
+      "calinski_harabasz_score": 780.5815,
+      "selected_for_dashboard": false
+    },
+    {
+      "k": 5,
+      "silhouette_score": 0.178,
+      "davies_bouldin_score": 1.713,
+      "calinski_harabasz_score": 688.0422,
+      "selected_for_dashboard": true
+    },
+    {
+      "k": 6,
+      "silhouette_score": 0.1815,
+      "davies_bouldin_score": 1.5941,
+      "calinski_harabasz_score": 637.3362,
+      "selected_for_dashboard": false
+    },
+    {
+      "k": 7,
+      "silhouette_score": 0.1726,
+      "davies_bouldin_score": 1.6312,
+      "calinski_harabasz_score": 590.5257,
+      "selected_for_dashboard": false
+    }
+  ],
+  "total_rows": 3002,
+  "feature_columns": [
+    "total_sessions",
+    "total_questions",
+    "questions_per_session",
+    "avg_time_per_question",
+    "active_days",
+    "sessions_last_7_days",
+    "active_days_last_7_days",
+    "sessions_previous_7_days",
+    "study_minutes_last_7_days",
+    "study_minutes_previous_7_days",
+    "total_study_minutes",
+    "avg_session_minutes",
+    "max_streak",
+    "evening_session_ratio",
+    "weekend_session_ratio",
+    "active_day_ratio",
+    "recent_active_day_ratio",
+    "session_growth_ratio"
+  ],
+  "cluster_distribution": {
+    "0": 465,
+    "1": 240,
+    "2": 671,
+    "3": 854,
+    "4": 772
+  },
+  "source_persona_distribution": null,
+  "persona_map": {
+    "1": "Fresh Starter",
+    "2": "Consistent Climber",
+    "0": "Deep Focus Learner",
+    "3": "Weekend Learner",
+    "4": "Flexible Learner"
+  },
+  "persona_descriptions": {
+    "Consistent Climber": {
+      "meaning": "Practises regularly across different days.",
+      "suggestion": "Keep your routine and continue strengthening weaker topics."
+    },
+    "Deep Focus Learner": {
+      "meaning": "Prefers longer or more concentrated practice sessions.",
+      "suggestion": "Your focus is useful, but try spreading some practice across more days for better memory."
+    },
+    "Weekend Learner": {
+      "meaning": "Usually practises more during weekends.",
+      "suggestion": "Weekend study works well, but adding one short weekday session can improve consistency."
+    },
+    "Fresh Starter": {
+      "meaning": "Has just started or has limited practice data so far.",
+      "suggestion": "Start with a few short sessions so MathSy can understand your learning pattern better."
+    },
+    "Flexible Learner": {
+      "meaning": "Has a moderate or mixed study pattern without one strong habit yet.",
+      "suggestion": "Try setting a simple weekly target to make your revision more predictable."
+    }
+  },
+  "cluster_centers": [
+    {
+      "cluster_id": 0,
+      "persona": "Deep Focus Learner",
+      "total_sessions": 35.3935,
+      "total_questions": 184.9548,
+      "questions_per_session": 5.2249,
+      "avg_time_per_question": 123.7575,
+      "active_days": 20.6172,
+      "sessions_last_7_days": 2.6151,
+      "active_days_last_7_days": 1.4946,
+      "sessions_previous_7_days": 2.5591,
+      "study_minutes_last_7_days": 34.153,
+      "study_minutes_previous_7_days": 31.9916,
+      "total_study_minutes": 447.0666,
+      "avg_session_minutes": 12.6037,
+      "max_streak": 4.471,
+      "evening_session_ratio": 0.196,
+      "weekend_session_ratio": 0.9713,
+      "active_day_ratio": 0.5973,
+      "recent_active_day_ratio": 0.6135,
+      "session_growth_ratio": 0.4627
+    },
+    {
+      "cluster_id": 1,
+      "persona": "Fresh Starter",
+      "total_sessions": 20.9375,
+      "total_questions": 108.825,
+      "questions_per_session": 5.2185,
+      "avg_time_per_question": 121.9036,
+      "active_days": 18.6167,
+      "sessions_last_7_days": -0.0,
+      "active_days_last_7_days": -0.0,
+      "sessions_previous_7_days": 1.5167,
+      "study_minutes_last_7_days": -0.0,
+      "study_minutes_previous_7_days": 19.0606,
+      "total_study_minutes": 260.5443,
+      "avg_session_minutes": 12.4516,
+      "max_streak": 3.7208,
+      "evening_session_ratio": 0.7845,
+      "weekend_session_ratio": 0.2852,
+      "active_day_ratio": 0.9252,
+      "recent_active_day_ratio": -0.0,
+      "session_growth_ratio": -0.7375
+    },
+    {
+      "cluster_id": 2,
+      "persona": "Consistent Climber",
+      "total_sessions": 69.1341,
+      "total_questions": 368.073,
+      "questions_per_session": 5.3243,
+      "avg_time_per_question": 129.9026,
+      "active_days": 45.5812,
+      "sessions_last_7_days": 5.2295,
+      "active_days_last_7_days": 3.4218,
+      "sessions_previous_7_days": 5.2683,
+      "study_minutes_last_7_days": 69.6495,
+      "study_minutes_previous_7_days": 69.5671,
+      "total_study_minutes": 920.1606,
+      "avg_session_minutes": 13.3533,
+      "max_streak": 6.4948,
+      "evening_session_ratio": 0.9889,
+      "weekend_session_ratio": 0.0587,
+      "active_day_ratio": 0.6645,
+      "recent_active_day_ratio": 0.6974,
+      "session_growth_ratio": 0.2149
+    },
+    {
+      "cluster_id": 3,
+      "persona": "Weekend Learner",
+      "total_sessions": 46.6698,
+      "total_questions": 246.7553,
+      "questions_per_session": 5.2895,
+      "avg_time_per_question": 121.2781,
+      "active_days": 35.7108,
+      "sessions_last_7_days": 3.3419,
+      "active_days_last_7_days": 2.5785,
+      "sessions_previous_7_days": 2.9988,
+      "study_minutes_last_7_days": 40.4163,
+      "study_minutes_previous_7_days": 35.8233,
+      "total_study_minutes": 580.1013,
+      "avg_session_minutes": 12.5247,
+      "max_streak": 5.3454,
+      "evening_session_ratio": 0.8768,
+      "weekend_session_ratio": 0.1837,
+      "active_day_ratio": 0.7762,
+      "recent_active_day_ratio": 0.8078,
+      "session_growth_ratio": 0.6657
+    },
+    {
+      "cluster_id": 4,
+      "persona": "Flexible Learner",
+      "total_sessions": 24.6166,
+      "total_questions": 128.3212,
+      "questions_per_session": 5.2148,
+      "avg_time_per_question": 119.6821,
+      "active_days": 22.2953,
+      "sessions_last_7_days": 1.7176,
+      "active_days_last_7_days": 1.6218,
+      "sessions_previous_7_days": 1.6671,
+      "study_minutes_last_7_days": 20.7138,
+      "study_minutes_previous_7_days": 19.7637,
+      "total_study_minutes": 300.7677,
+      "avg_session_minutes": 12.2456,
+      "max_streak": 3.8614,
+      "evening_session_ratio": 0.8282,
+      "weekend_session_ratio": 0.2802,
+      "active_day_ratio": 0.9217,
+      "recent_active_day_ratio": 0.9638,
+      "session_growth_ratio": 0.3736
+    }
+  ],
+  "note": "The study pattern model applies time-based behavioural analysis and K-Means clustering. Temporal features such as recent sessions, previous-week sessions, study-minute changes, active-day ratio, evening study ratio, and weekend study ratio are extracted from practice logs. These features are scaled using StandardScaler and clustered using K-Means to identify interpretable learner patterns."
+}

@@ -1,0 +1,4 @@
+.app-container {
+  @apply min-h-screen bg-[#FAFAFA] font-sans text-slate-600 selection:bg-indigo-100 selection:text-indigo-900;
+  font-family: 'Quicksand', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}

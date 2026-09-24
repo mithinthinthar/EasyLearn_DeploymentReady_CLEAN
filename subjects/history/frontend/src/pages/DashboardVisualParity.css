@@ -1,0 +1,3 @@
+.heatmap-cell::after{content:none!important}
+.history-heatmap-tooltip{position:fixed;z-index:2000;transform:translate(-50%,calc(-100% - 11px));width:max-content;max-width:190px;padding:7px 9px;border-radius:7px;background:#111827;color:#fff;font:700 10px 'Quicksand',sans-serif;white-space:nowrap;box-shadow:0 7px 20px rgba(15,23,42,.22);pointer-events:none;animation:history-tip-in .1s ease-out}
+@keyframes history-tip-in{from{opacity:0;transform:translate(-50%,calc(-100% - 6px))}to{opacity:1;transform:translate(-50%,calc(-100% - 11px))}}

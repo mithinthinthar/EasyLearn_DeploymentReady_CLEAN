@@ -1,0 +1,110 @@
+/* Define the animation at the top */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reusing container styles from QuizMode logic */
+.quiz-container {
+  @apply max-w-2xl mx-auto px-6 py-8;
+}
+
+.quit-button {
+  @apply text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-8 text-sm font-medium transition;
+}
+
+/* --- Card Styles --- */
+.essay-card {
+  @apply bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6;
+}
+
+.essay-header {
+  @apply flex justify-between items-start mb-4 gap-4;
+}
+
+.essay-question-text {
+  @apply text-xl font-bold text-slate-900 leading-snug;
+}
+
+.mark-badge {
+  @apply bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap;
+}
+
+/* --- Input Area --- */
+.essay-textarea {
+  @apply w-full h-48 p-4 rounded-xl border border-slate-200 text-slate-700 text-lg leading-relaxed mb-4 transition resize-none;
+  @apply focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none;
+}
+
+.essay-textarea:disabled {
+  @apply bg-slate-50 text-slate-500 cursor-not-allowed;
+}
+
+/* --- Buttons --- */
+.submit-button {
+  @apply px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2;
+}
+
+.next-button {
+  @apply px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition flex items-center gap-2;
+}
+
+/* --- Results Section --- */
+.result-container {
+  /* REMOVED: animate-in slide-in-from-bottom-4 fade-in */
+  @apply p-6 rounded-2xl border-2 mb-6;
+  
+  /* ADDED: Standard CSS animation */
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.result-container.success {
+  @apply bg-emerald-50 border-emerald-100;
+}
+
+.result-container.warning {
+  @apply bg-orange-50 border-orange-100;
+}
+
+.result-header {
+  @apply flex items-center justify-between mb-6;
+}
+
+.result-title {
+  @apply text-lg font-bold text-slate-800 flex items-center gap-2;
+}
+
+.result-score {
+  @apply text-3xl font-black text-slate-900;
+}
+
+.result-score span {
+  @apply text-sm text-slate-500 font-normal;
+}
+
+/* --- Matches List --- */
+.matches-list {
+  @apply space-y-3;
+}
+
+.matches-label {
+  @apply text-xs font-bold text-slate-400 uppercase tracking-wider;
+}
+
+.match-card {
+  @apply bg-white p-4 rounded-xl border border-slate-200 shadow-sm;
+}
+
+.student-quote {
+  @apply text-slate-600 italic mb-2 border-l-4 border-indigo-200 pl-3;
+}
+
+.match-feedback {
+  @apply flex items-center gap-2 text-emerald-700 text-sm font-medium bg-emerald-50/50 p-2 rounded-lg;
+}

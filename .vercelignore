@@ -1,0 +1,15 @@
+# Vercel only builds the frontends. Backend local data and private config do not need uploading.
+**/.env
+**/.env.*
+!**/.env.example
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/*.pem
+**/*.key
+**/*.crt
+**/node_modules
+**/build
+**/dist
+.git

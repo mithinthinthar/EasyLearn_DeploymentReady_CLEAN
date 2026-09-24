@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sign in to EasyLearn" />
+    <title>Sign in | EasyLearn</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="brand.css" />
+    <style>
+      .login-page{min-height:100vh;background:radial-gradient(circle at 12% 18%,#eef0ff 0,transparent 34%),radial-gradient(circle at 88% 82%,#e7fbf4 0,transparent 28%),#f6f8fc}
+      .login-topbar{position:relative;justify-content:flex-start}
+      .login-only-main{min-height:calc(100vh - 72px);display:grid;align-items:center}
+      .login-only-shell{width:100%}
+    </style>
+  </head>
+  <body class="login-page">
+    <header class="topbar login-topbar">
+      <a class="brand" href="login.html" aria-label="EasyLearn sign in"><img class="brand-mark" src="easylearn-logo.svg" alt="" /><span>EasyLearn</span></a>
+    </header>
+    <main class="login-only-main">
+      <section class="login-shell login-only-shell">
+        <div class="login-copy">
+          <p class="eyebrow">Learning without barriers</p>
+          <h1>One portal. Three subjects. Every learner supported.</h1>
+          <p>Sign in once to access History, Mathematics, and Bahasa Melayu. After sign-in, EasyLearn opens your role-based dashboard.</p>
+          <div class="feature-row"><span>✓ One secure login</span><span>✓ Unified progress</span><span>✓ Role-based access</span></div>
+        </div>
+        <div class="login-card">
+          <span class="step-label">Secure account access</span>
+          <h2>Sign in to EasyLearn</h2>
+          <p class="muted">Choose your role, then continue with your real Google account.</p>
+          <div class="role-options" role="radiogroup" aria-label="Account type">
+            <button class="role-option selected" data-role="student" type="button"><span class="role-icon student">S</span><span><strong>Student</strong><small>Learn, practise, and use AI tutors</small></span></button>
+            <button class="role-option" data-role="teacher" type="button"><span class="role-icon teacher">T</span><span><strong>Teacher</strong><small>Analyse classes and individual learners</small></span></button>
+            <button class="role-option" data-role="parent" type="button"><span class="role-icon parent">P</span><span><strong>Parent</strong><small>Monitor linked students</small></span></button>
+          </div>
+          <button id="google-login" class="primary-button" type="button"><span class="google-g">G</span> Continue with Google</button>
+          <p id="auth-message" class="auth-message" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="login.js"></script>
+  </body>
+</html>

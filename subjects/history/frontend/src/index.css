@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add your own custom global styles below here if needed */
+body {
+  margin: 0;
+  font-family: 'Quicksand', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3, h4, h5, h6 { font-family: 'Lexend', sans-serif; font-weight: 700; }
+strong, b { font-weight: 700; }

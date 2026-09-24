@@ -1,0 +1,94 @@
+.flashcard-container {
+  @apply max-w-2xl mx-auto px-6 py-8;
+}
+
+.flashcard-header {
+  @apply flex items-center justify-between mb-8;
+}
+
+.back-button {
+  @apply text-slate-500 hover:text-slate-800 flex items-center gap-1 text-sm font-medium transition;
+}
+
+.counter {
+  @apply text-slate-400 text-sm font-mono;
+}
+
+.topic-info {
+  @apply text-center mb-8;
+}
+
+.topic-title {
+  @apply text-sm font-bold text-indigo-600 uppercase tracking-wider;
+}
+
+.topic-subtitle {
+  @apply text-2xl font-bold text-slate-900;
+}
+
+/* 3D Flip Effect */
+.flashcard-scene {
+  perspective: 1000px;
+  @apply w-full h-80 cursor-pointer; /* Removed 'group' from here */
+}
+
+.flashcard {
+  @apply relative w-full h-full duration-500 transition-all;
+  transform-style: preserve-3d;
+}
+
+.flashcard.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  @apply absolute w-full h-full rounded-3xl p-8 flex flex-col items-center justify-center shadow-xl;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flashcard-front {
+  @apply bg-white border-2 border-slate-100 shadow-slate-200/50 group-hover:border-indigo-100 transition-colors;
+}
+
+.flashcard-back {
+  /* REMOVED 'rotate-y-180' */
+  @apply bg-indigo-600;
+  transform: rotateY(180deg);
+}
+
+.card-label {
+  @apply text-xs font-bold text-slate-400 uppercase tracking-widest mb-6;
+}
+
+.card-term {
+  @apply text-3xl font-bold text-slate-800 text-center;
+}
+
+.click-hint {
+  @apply text-slate-400 text-sm absolute bottom-6 opacity-0 group-hover:opacity-100 transition-opacity;
+}
+
+.card-label-back {
+  @apply text-indigo-200 text-xs font-bold uppercase tracking-widest mb-6;
+}
+
+.card-definition {
+  @apply text-xl text-center text-white leading-relaxed font-medium;
+}
+
+.flashcard-controls {
+  @apply flex items-center justify-center gap-6 mt-10;
+}
+
+.control-button {
+  @apply p-4 rounded-full transition shadow-sm active:scale-95;
+}
+
+.control-button.prev {
+  @apply bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300;
+}
+
+.control-button.next {
+  @apply bg-slate-900 text-white hover:bg-slate-800 shadow-md;
+}

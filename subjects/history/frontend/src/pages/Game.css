@@ -1,0 +1,19 @@
+.game-container {
+  @apply max-w-5xl mx-auto px-6 py-24 text-center;
+}
+
+.game-icon-wrapper {
+  @apply inline-block p-6 bg-indigo-50 rounded-full text-indigo-500 mb-6;
+}
+
+.game-title {
+  @apply text-3xl font-bold text-slate-900 mb-4;
+}
+
+.game-description {
+  @apply text-slate-500 text-lg mb-8 max-w-md mx-auto;
+}
+
+.game-home-button {
+  @apply px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition;
+}

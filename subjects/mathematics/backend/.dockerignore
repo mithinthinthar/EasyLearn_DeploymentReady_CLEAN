@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.venv
+venv
+__pycache__
+*.pyc
+*.pem
+*.key
+*firebase-admin*.json
+*service-account*.json
+
+# Training-only / synthetic datasets are not needed by the runtime service.
+model_refinement/
+train_*.py
+generate_synthetic_learning_data.py

@@ -1,0 +1,9 @@
+.brand-mark{
+  display:block!important;
+  width:34px!important;
+  height:34px!important;
+  padding:0!important;
+  border-radius:9px!important;
+  background:transparent!important;
+  object-fit:contain;
+}

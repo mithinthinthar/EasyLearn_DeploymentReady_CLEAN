@@ -1,0 +1,27 @@
+EasyLearn History quick fix
+===========================
+
+Cause fixed
+-----------
+Some History interaction records contained is_correct=null. The History API
+tried to convert that null value to an integer, which crashed dashboard,
+mastery, and recommendation requests and appeared in the browser as:
+"NetworkError when attempting to fetch resource."
+
+How to apply
+------------
+1. Close the EasyLearn service windows.
+2. Extract this ZIP directly into your EasyLearn_Standardized folder.
+3. Choose Replace/Overwrite when Windows asks about the four existing files.
+4. Run Start-EasyLearn.cmd again.
+5. Open History and press Ctrl+Shift+R once.
+
+You do not need to delete any Firestore data. Existing null records are now
+handled safely, and all new History quiz answers save a real true/false value.
+
+Files in this patch
+-------------------
+- subjects/history/backend/history_app_local.py
+- subjects/history/backend/app.py
+- subjects/history/frontend/src/components/QuizMode.tsx
+- shared/auth/auth_server.py

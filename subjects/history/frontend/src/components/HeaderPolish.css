@@ -1,0 +1,6 @@
+.logo-icon{width:32px;height:32px;border-radius:9px;display:block;background:transparent;color:transparent}
+.student-id-help{margin-left:auto;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#b3bbc8;cursor:help;transition:background .2s,color .2s}
+.student-id-help:hover,.student-id-help:focus-visible{background:#eef2ff;color:#3855c0;outline:none}
+.student-id-help .detail-info{margin:0!important;width:14px!important;height:14px!important;color:inherit}
+.student-id-help{position:relative}
+.student-id-help:where(:hover,:focus-visible):after{content:attr(data-tooltip);position:absolute;right:-8px;bottom:calc(100% + 9px);z-index:150;width:230px;padding:8px 10px;border-radius:8px;background:#111827;color:#fff;font:600 11px/1.35 'Quicksand',sans-serif;box-shadow:0 8px 22px rgba(15,23,42,.2)}

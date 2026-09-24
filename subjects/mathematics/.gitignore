@@ -1,0 +1,24 @@
+# Environment variables
+.env
+.env.*
+**/.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node.js
+node_modules/
+
+# IDE
+.vscode/
+
+# Firebase / Google Cloud credentials
+backend/server/*firebase-adminsdk*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+backend/firebase_service_account.json

@@ -1,0 +1,3 @@
+.el-tutor-nudge{display:none!important;animation:none!important;pointer-events:none}
+.el-tutor:not(.is-expanded):hover .el-tutor-nudge,.el-tutor:not(.is-expanded):focus-within .el-tutor-nudge{display:block!important;animation:history-nudge-in .18s cubic-bezier(.2,.8,.2,1)!important}
+@keyframes history-nudge-in{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:none}}

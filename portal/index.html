@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="EasyLearn unified SPM learning portal" />
+    <title>EasyLearn</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="brand.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="EasyLearn home">
+        <img class="brand-mark" src="easylearn-logo.svg" alt="" /><span>EasyLearn</span>
+      </a>
+      <nav id="portal-nav" hidden>
+        <button class="nav-button active" data-view="dashboard">Dashboard</button>
+        <button class="nav-button" data-view="subjects">Subjects</button>
+      </nav>
+      <div id="account-area" class="account-area" hidden>
+        <span id="role-badge" class="role-badge"></span>
+        <img id="user-picture" class="avatar" alt="Profile" hidden />
+        <div class="account-copy"><strong id="user-name"></strong><small id="user-email"></small></div>
+        <button id="logout-button" class="icon-button" title="Log out">↪</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="signed-in-view" hidden>
+        <div id="dashboard-view" class="view-container">
+          <div class="page-heading">
+            <div><p class="eyebrow" id="dashboard-eyebrow">Your learning overview</p><h1 id="dashboard-title">Welcome back</h1><p id="dashboard-subtitle" class="muted"></p></div>
+            <div id="student-code-box" class="student-code" hidden><small>Your student link code</small><strong id="student-code"></strong><button id="copy-code">Copy</button></div>
+          </div>
+
+          <div id="dashboard-loading" class="state-card">Loading your EasyLearn dashboard…</div>
+          <div id="dashboard-error" class="state-card error" hidden></div>
+          <div id="dashboard-content" hidden>
+            <div id="metric-grid" class="metric-grid"></div>
+            <section class="panel">
+              <div class="section-heading"><div><h2 id="subject-heading">Subject performance</h2><p class="muted">A single view across all EasyLearn subjects.</p></div></div>
+              <div id="subject-summary" class="subject-summary-grid"></div>
+            </section>
+            <section id="people-panel" class="panel" hidden>
+              <div class="section-heading"><div><h2 id="people-heading">Students</h2><p id="people-subtitle" class="muted"></p></div></div>
+              <form id="link-student-form" class="link-form" hidden>
+                <input id="student-code-input" placeholder="Student ID, e.g. S-1234567" required />
+                <button class="secondary-button" type="submit">Link student</button>
+              </form>
+              <p id="link-message" class="form-message"></p>
+              <div id="student-list" class="student-list"></div>
+            </section>
+            <section class="panel">
+              <div class="section-heading"><div><h2>Recent activity</h2><p class="muted">Latest recorded work across the platform.</p></div></div>
+              <div id="recent-activity" class="activity-list"></div>
+            </section>
+          </div>
+        </div>
+
+        <div id="subjects-view" class="view-container" hidden>
+          <div class="page-heading"><div><p class="eyebrow">EasyLearn subjects</p><h1 id="subjects-title">Choose a subject</h1><p id="subjects-copy" class="muted"></p></div></div>
+          <div id="application-status" class="status-panel"><span class="pulse"></span><p>Subject services are checked automatically. Cloud AI services may need a short warm-up on the first request.</p><button id="refresh-status" class="text-button">Check again</button></div>
+          <div id="subject-grid" class="subject-grid">
+            <article class="subject-card history-card" data-subject="history" data-url="/history/">
+              <div class="card-topline"><span class="subject-icon">H</span><span class="status-badge checking"><i></i>Checking</span></div>
+              <p class="subject-label">Explore the past</p><h2>History</h2><p>Understand key events, practise structured questions, and track chapter mastery.</p>
+              <a href="/history/" target="_blank" rel="noopener">Open History <span>→</span></a>
+            </article>
+            <article class="subject-card math-card" data-subject="mathematics" data-url="/mathematics/">
+              <div class="card-topline"><span class="subject-icon">π</span><span class="status-badge checking"><i></i>Checking</span></div>
+              <p class="subject-label">Build problem-solving skills</p><h2>Mathematics</h2><p>Work through SPM questions, Quick Snap, adaptive practice, and AI support.</p>
+              <a href="/mathematics/" target="_blank" rel="noopener">Open Mathematics <span>→</span></a>
+            </article>
+            <article class="subject-card language-card" data-subject="bahasa_melayu" data-url="/bahasa-melayu/">
+              <div class="card-topline"><span class="subject-icon">BM</span><span class="status-badge checking"><i></i>Checking</span></div>
+              <p class="subject-label">Kuasai Bahasa Melayu</p><h2>Bahasa Melayu</h2><p>Develop writing, grammar, speaking, listening, and comprehension skills.</p>
+              <a href="/bahasa-melayu/" target="_blank" rel="noopener">Open Bahasa Melayu <span>→</span></a>
+            </article>
+          </div>
+          <div id="readonly-note" class="readonly-note" hidden>Teacher and parent accounts open subject dashboards in read-only mode. Practice and AI tutor features are available only to students.</div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="student-dialog" class="student-dialog"><button id="close-dialog" class="dialog-close">×</button><div id="student-dialog-content"></div></dialog>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

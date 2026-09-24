@@ -1,0 +1,34 @@
+.bucket-game-layout {
+  @apply min-h-screen pt-12;
+}
+
+.cards-pool {
+  perspective: 1000px;
+}
+
+.bucket-wrapper {
+  @apply transition-transform active:scale-95;
+}
+
+.bucket-visual {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Update your card mapping to include these classes */
+.card-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  @apply border-rose-500 bg-rose-50;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+.combo-glow {
+  @apply ring-4 ring-indigo-500 ring-opacity-50;
+  transition: all 0.3s ease;
+}

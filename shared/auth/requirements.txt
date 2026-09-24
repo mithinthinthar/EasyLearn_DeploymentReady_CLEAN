@@ -3,3 +3,7 @@ uvicorn[standard]>=0.30,<1
 firebase-admin>=6.5,<8
 python-dotenv>=1.0,<2
 pydantic>=2.8,<3
+
+# Pin a Linux-compatible wheel for Vercel's Python 3.12/Linux builder.
+# This is a transitive dependency of Google/Firebase packages.
+google-crc32c==1.8.0

@@ -1,12 +1,1 @@
-EasyLearn BM Vercel Librosa Fix
-
-Copy the contents of this folder into:
-C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN
-
-Choose "Replace files in the destination".
-
-Changes:
-- Removes librosa from BM runtime dependencies.
-- Uses faster_whisper.decode_audio (PyAV) for audio decode/resampling.
-- Uses NumPy for frame-wise RMS energy.
-- Preserves BM speaking scoring and common browser audio formats.
+Copy the 'scripts' folder into your EasyLearn_DeploymentReady_CLEAN root and replace scripts/build-all.mjs. This changes clean child installs from 'npm ci' to 'npm ci --legacy-peer-deps' and does not alter application code.

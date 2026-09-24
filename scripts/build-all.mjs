@@ -18,7 +18,14 @@ function runNpm(cwd, args, extraEnv = {}) {
 
 function installAndBuild(relativeDir, env) {
   const cwd = resolve(root, relativeDir);
-  if (!existsSync(resolve(cwd, "node_modules"))) runNpm(cwd, ["ci"]);
+
+  // Several legacy frontend packages still declare React <=18 peer ranges,
+  // while EasyLearn is already using React 19 successfully. npm 7+ treats
+  // those peer ranges as hard install conflicts on clean cloud builds.
+  if (!existsSync(resolve(cwd, "node_modules"))) {
+    runNpm(cwd, ["ci", "--legacy-peer-deps"]);
+  }
+
   runNpm(cwd, ["run", "build"], env);
   return cwd;
 }

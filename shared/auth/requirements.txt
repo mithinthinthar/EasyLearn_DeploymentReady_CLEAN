@@ -4,6 +4,7 @@ firebase-admin>=6.5,<8
 python-dotenv>=1.0,<2
 pydantic>=2.8,<3
 
-# Pin a Linux-compatible wheel for Vercel's Python 3.12/Linux builder.
-# This is a transitive dependency of Google/Firebase packages.
+# Vercel Linux/Python 3.12 compatibility pin.
+# google-crc32c 1.9.0 currently resolves without a compatible Linux x86_64
+# artifact in this build path; 1.8.0 has a CPython 3.12 manylinux x86_64 wheel.
 google-crc32c==1.8.0

@@ -1,18 +1,25 @@
-EasyLearn BM Listening Playback Fix
+EasyLearn — Common Vercel google-crc32c Fix
 
-What this fixes
-1. Gemini 3.8 TTS now uses the official unary response_format={"type":"audio"}.
-   Gemini 3.8 unary TTS returns a complete WAV file.
-2. The backend attempts to create/upload the WAV before returning the listening
-   session, so the frontend receives a direct Blob URL whenever possible.
-3. The Quiz player no longer rewinds itself through onTimeUpdate.
-   The custom one-play button already prevents ordinary seeking.
-4. The Quiz waits until the browser reports canplay before enabling Play and
-   displays an actual audio-load/playback error.
-5. Listening Practice no longer hardcodes type="audio/mpeg" for a WAV file.
+Copy the `shared` and `subjects` folders into:
+C:\Users\User\Documents\EasyLearn_DeploymentReady_CLEAN
 
-Deployments required
-- BM backend
-- Final frontend
+Choose "Replace files in destination".
 
-No Math API or Platform API change is required for this listening fix.
+WHY
+Fresh Vercel Python deployments are currently resolving google-crc32c==1.9.0,
+but that build is failing on Vercel Linux x86_64. This patch explicitly pins
+google-crc32c==1.8.0, which has a CPython 3.12 manylinux x86_64 wheel.
+
+IMPORTANT
+You do NOT need to redeploy every backend just because these files changed.
+
+Redeploy only the services that need current code changes:
+1. easylearn-bm-api
+2. easylearn-platform-api
+3. easylearn-math-api only if the Math snapshot backend patch has not yet
+   successfully deployed.
+
+History does not need redeployment now. Its requirements file is included only
+so a future History redeploy will not hit the same crc32c problem.
+
+The final frontend is deployed separately after backend fixes are stable.

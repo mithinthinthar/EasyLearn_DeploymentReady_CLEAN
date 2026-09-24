@@ -8810,6 +8810,12 @@ def admin_save_approved_k2_import_batch(batch_id):
         if conn:
             conn.close()
             
+
+# Register the EasyLearn shared-portal login bridge.
+# This module attaches /api/auth/portal-login to the existing Flask app.
+import math_portal_app  # noqa: E402,F401
+
+
 if __name__ == "__main__":
     app.run(
         host="127.0.0.1",

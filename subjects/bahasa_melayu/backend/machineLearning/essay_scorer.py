@@ -10,26 +10,15 @@ score_essay() returns:
   - grade             : A–F based on combined percentage
 """
 import re
-import torch
 import numpy as np
-from transformers import XLMRobertaTokenizer, XLMRobertaModel
 from langdetect import detect_langs, LangDetectException
 
-# ── Model loading ────────────────────────────────────────────────────────
-MODEL_NAME = "xlm-roberta-base"
-_tokenizer = None
-_model     = None
+# ── Serverless scoring note ─────────────────────────────────────────────────
+# The original implementation loaded XLM-RoBERTa only to calculate a CLS
+# embedding. That embedding was never referenced by any scoring rule below.
+# Vercel therefore paid the model download/RAM cost without changing marks.
+# Production uses the existing BM-specific linguistic/rubric features directly.
 
-
-def get_model():
-    global _tokenizer, _model
-    if _tokenizer is None:
-        print("Loading XLM-RoBERTa... (first run only)")
-        _tokenizer = XLMRobertaTokenizer.from_pretrained(MODEL_NAME)
-        _model     = XLMRobertaModel.from_pretrained(MODEL_NAME)
-        _model.eval()
-        print("XLM-RoBERTa ready.")
-    return _tokenizer, _model
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -372,20 +361,11 @@ def extract_features(essay: str) -> dict:
     Extracts linguistic features using XLM-RoBERTa + BM-specific rules.
     Returns embedding + handcrafted metrics.
     """
-    tokenizer, model = get_model()
-    essay_lower      = essay.lower()
+    essay_lower = essay.lower()
 
-    # ── XLM-RoBERTa CLS embedding ────────────────────────────────────────────
-    inputs = tokenizer(
-        essay,
-        max_length=512,
-        truncation=True,
-        padding="max_length",
-        return_tensors="pt",
-    )
-    with torch.no_grad():
-        outputs = model(**inputs)
-    cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
+    # XLM-RoBERTa's CLS embedding was not used by any scoring function.
+    # Keep a tiny placeholder for backward compatibility with stored/debug data.
+    cls_embedding = np.zeros(1, dtype=np.float32)
 
     # ── Basic counts ─────────────────────────────────────────────────────────
     sentences  = [s.strip() for s in re.split(r'[.!?]', essay) if len(s.strip()) > 5]

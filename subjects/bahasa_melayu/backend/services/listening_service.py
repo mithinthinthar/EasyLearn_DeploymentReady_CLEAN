@@ -6,6 +6,7 @@ from datetime import datetime, timezone, timedelta
 from typing import List
 
 import edge_tts
+from difflib import SequenceMatcher
 
 import database
 from services.agentic_gemini import _ask_gemini, OutputSchema
@@ -576,10 +577,16 @@ async def generate_listening_session(
     data["audio_script"] = clean_script
     data["difficulty"] = difficulty
 
-    audio_url = await synthesize_listening_audio(
-        script=clean_script,
-        session_id=session_id,
-    )
+    # On Vercel, do not block the whole quiz creation on TTS/network I/O.
+    # Save the generated script/questions first; the /audio/{session_id} route
+    # will create the temporary MP3 only when the browser actually plays it.
+    if os.getenv("VERCEL"):
+        audio_url = f"/api/listening/audio/{session_id}"
+    else:
+        audio_url = await synthesize_listening_audio(
+            script=clean_script,
+            session_id=session_id,
+        )
 
     data["audio_url"] = audio_url
 
@@ -606,6 +613,116 @@ async def generate_listening_session(
 # ─────────────────────────────────────────────────────────────────────────────
 # MARKING
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def _normalize_answer(value: str) -> str:
+    value = str(value or "").strip().lower()
+    value = re.sub(r"^[a-d][\).:\-\s]+", "", value)
+    value = re.sub(r"[^\w\s]", " ", value, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _fallback_mark_listening(session: dict, answers: List[dict]) -> dict:
+    """Deterministic backup marker used only when Gemini marking is unavailable."""
+    answer_map = {
+        str(item.get("question_id")): str(item.get("answer", ""))
+        for item in (answers or [])
+    }
+
+    feedbacks = []
+    total_score = 0.0
+    max_score = 0
+
+    for petikan in session.get("petikans", []):
+        for question in petikan.get("questions", []):
+            qid = str(question.get("question_id", ""))
+            qtype = question.get("question_type", "short_answer")
+            marks = int(question.get("marks") or 1)
+            accepted = [
+                str(v) for v in (question.get("answer_scheme") or [])
+                if str(v).strip()
+            ]
+            user_raw = answer_map.get(qid, "")
+            user_norm = _normalize_answer(user_raw)
+            accepted_norm = [_normalize_answer(v) for v in accepted]
+
+            correct = False
+            if user_norm:
+                if qtype in {"mcq", "true_false"}:
+                    # Accept both the stored letter/value and common option text.
+                    for candidate in accepted_norm:
+                        if user_norm == candidate:
+                            correct = True
+                            break
+                        if candidate and (
+                            user_norm.startswith(candidate + " ")
+                            or candidate.startswith(user_norm + " ")
+                        ):
+                            correct = True
+                            break
+                else:
+                    for candidate in accepted_norm:
+                        if not candidate:
+                            continue
+                        similarity = SequenceMatcher(None, user_norm, candidate).ratio()
+                        if (
+                            user_norm == candidate
+                            or (len(candidate) >= 4 and candidate in user_norm)
+                            or (len(user_norm) >= 4 and user_norm in candidate)
+                            or similarity >= 0.78
+                        ):
+                            correct = True
+                            break
+
+            awarded = float(marks if correct else 0)
+            total_score += awarded
+            max_score += marks
+            correct_text = " / ".join(accepted) if accepted else "-"
+
+            feedbacks.append({
+                "question_id": qid,
+                "question_text": str(question.get("question_text", "")),
+                "user_answer": user_raw,
+                "correct_answer": correct_text,
+                "marks_awarded": awarded,
+                "max_marks": marks,
+                "feedback": (
+                    "Jawapan diterima."
+                    if correct
+                    else f"Jawapan belum sepadan dengan skema. Jawapan diterima: {correct_text}"
+                ),
+            })
+
+    percentage = round((total_score / max_score) * 100, 1) if max_score else 0.0
+    if percentage >= 80:
+        grade = "A"
+    elif percentage >= 65:
+        grade = "B"
+    elif percentage >= 50:
+        grade = "C"
+    elif percentage >= 40:
+        grade = "D"
+    elif percentage >= 20:
+        grade = "E"
+    else:
+        grade = "F"
+
+    return {
+        "total_score": round(total_score, 1),
+        "max_score": int(max_score),
+        "percentage": percentage,
+        "grade": grade,
+        "question_feedbacks": feedbacks,
+        "overall_feedback": (
+            "Jawapan ditanda menggunakan skema jawapan tersimpan kerana penanda AI tidak tersedia sementara."
+        ),
+        "suggestions": [
+            "Dengar semula petikan dan fokus pada kata kunci.",
+            "Semak ejaan serta frasa penting sebelum menghantar.",
+        ],
+    }
+
+
 
 async def score_listening_submission(
     session_id: str,
@@ -638,7 +755,8 @@ async def score_listening_submission(
     )
 
     if not result:
-        raise ValueError("Failed to mark listening answers from Gemini")
+        print("Gemini listening marker unavailable; using stored answer-scheme fallback.")
+        result = _fallback_mark_listening(session, answers)
 
     result["session_id"] = session_id
     result["quiz_type"] = "mendengar"
@@ -697,7 +815,8 @@ async def score_latihan_listening_submission(
     )
 
     if not result:
-        raise ValueError("Failed to mark listening latihan answers from Gemini")
+        print("Gemini listening latihan marker unavailable; using stored answer-scheme fallback.")
+        result = _fallback_mark_listening(session, answers)
 
     result["session_id"] = session_id
     result["quiz_type"] = "mendengar"

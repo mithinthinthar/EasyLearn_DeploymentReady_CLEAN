@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useLanguage } from "../../../language";
 import { useAuth } from "../../../context/AuthContext";
@@ -82,7 +82,6 @@ export default function UjianMendengarQuizPage() {
   const [result, setResult] = useState<Result | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastTimeRef = useRef(0);
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [audioPlayed, setAudioPlayed] = useState<boolean>(false);
   const [audioPlaying, setAudioPlaying] = useState<boolean>(false);
@@ -121,7 +120,7 @@ export default function UjianMendengarQuizPage() {
 
       localStorage.setItem("selectedDifficulty", difficulty);
 
-      // ── Retry session ───────────────────────────────────────────────
+      // â”€â”€ Retry session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       if (retry && retrySessionId) {
         const data = await retryListening(retrySessionId, "mendengar", userId) as {
           session_id: string;
@@ -141,7 +140,7 @@ export default function UjianMendengarQuizPage() {
         return;
       }
 
-      // ── Resume latest ───────────────────────────────────────────────
+      // â”€â”€ Resume latest â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       if (!forceNew) {
         const res = await fetch(
           `${BASE_BACKEND_URL}/api/listening/resume-latest?quiz_type=mendengar&user_id=${userId}`
@@ -162,7 +161,7 @@ export default function UjianMendengarQuizPage() {
         }
       }
 
-      // ── Start new session ───────────────────────────────────────────      
+      // â”€â”€ Start new session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€      
       const data = await startListening("mendengar", userId, difficulty);
 
       setSessionId(data.session_id);
@@ -344,12 +343,12 @@ export default function UjianMendengarQuizPage() {
               }}
             >
               {audioPlayed
-                ? "✔ Audio Telah Dimainkan"
+                ? "âœ” Audio Telah Dimainkan"
                 : audioPlaying
-                ? "🔊 Sedang Dimainkan..."
+                ? "ðŸ”Š Sedang Dimainkan..."
                 : !audioReady
-                ? "⏳ Memuatkan Audio..."
-                : "▶ Main Audio"}
+                ? "â³ Memuatkan Audio..."
+                : "â–¶ Main Audio"}
             </button>
 
             {audioDuration > 0 && (
@@ -465,7 +464,7 @@ export default function UjianMendengarQuizPage() {
                     }}
                   >
                     <p style={{ margin: "0 0 4px", fontSize: "13px" }}>
-                      {feedback.marks_awarded === feedback.max_marks ? "✅" : feedback.marks_awarded > 0 ? "🟡" : "❌"}{" "}
+                      {feedback.marks_awarded === feedback.max_marks ? "âœ…" : feedback.marks_awarded > 0 ? "ðŸŸ¡" : "âŒ"}{" "}
                       <strong>
                         {feedback.marks_awarded === feedback.max_marks ? "Betul!" : feedback.marks_awarded > 0 ? "Separa Betul" : "Salah"}
                       </strong>

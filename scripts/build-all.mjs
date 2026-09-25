@@ -1,27 +1,50 @@
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+﻿import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = resolve(import.meta.dirname, "..");
 const output = resolve(root, "dist");
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+
+const npmExecPath = process.env.npm_execpath;
 
 function runNpm(cwd, args, extraEnv = {}) {
   console.log(`\n> ${cwd.replace(root, ".")} :: npm ${args.join(" ")}`);
-  const result = spawnSync(npm, args, {
+
+  const command = npmExecPath
+    ? process.execPath
+    : (process.platform === "win32"
+        ? (process.env.ComSpec || "cmd.exe")
+        : "npm");
+
+  const commandArgs = npmExecPath
+    ? [npmExecPath, ...args]
+    : (process.platform === "win32"
+        ? ["/d", "/s", "/c", `npm ${args.join(" ")}`]
+        : args);
+
+  const result = spawnSync(command, commandArgs, {
     cwd,
     stdio: "inherit",
     env: { ...process.env, ...extraEnv },
   });
-  if (result.status !== 0) process.exit(result.status ?? 1);
+
+  if (result.error) {
+    console.error(`\nFailed to start npm in ${cwd}:`);
+    console.error(result.error);
+    process.exit(1);
+  }
+
+  if (result.status !== 0) {
+    console.error(
+      `\nCommand failed with exit code ${result.status ?? "unknown"}: npm ${args.join(" ")}`
+    );
+    process.exit(result.status ?? 1);
+  }
 }
 
 function installAndBuild(relativeDir, env) {
   const cwd = resolve(root, relativeDir);
 
-  // Several legacy frontend packages still declare React <=18 peer ranges,
-  // while EasyLearn is already using React 19 successfully. npm 7+ treats
-  // those peer ranges as hard install conflicts on clean cloud builds.
   if (!existsSync(resolve(cwd, "node_modules"))) {
     runNpm(cwd, ["ci", "--legacy-peer-deps"]);
   }
@@ -42,7 +65,12 @@ const history = installAndBuild("subjects/history/frontend", {
   REACT_APP_PORTAL_URL: "/",
   REACT_APP_LOCAL_MODE: "false",
 });
-cpSync(resolve(history, "build"), resolve(output, "history"), { recursive: true });
+
+cpSync(
+  resolve(history, "build"),
+  resolve(output, "history"),
+  { recursive: true }
+);
 
 const mathematics = installAndBuild("subjects/mathematics/frontend", {
   CI: "false",
@@ -52,7 +80,12 @@ const mathematics = installAndBuild("subjects/mathematics/frontend", {
   REACT_APP_PORTAL_URL: "/",
   REACT_APP_LOCAL_MODE: "false",
 });
-cpSync(resolve(mathematics, "build"), resolve(output, "mathematics"), { recursive: true });
+
+cpSync(
+  resolve(mathematics, "build"),
+  resolve(output, "mathematics"),
+  { recursive: true }
+);
 
 const bm = installAndBuild("subjects/bahasa_melayu/frontend", {
   VITE_BASE_PATH: "/bahasa-melayu/",
@@ -61,6 +94,11 @@ const bm = installAndBuild("subjects/bahasa_melayu/frontend", {
   VITE_PORTAL_URL: "/",
   VITE_LOCAL_MODE: "false",
 });
-cpSync(resolve(bm, "dist"), resolve(output, "bahasa-melayu"), { recursive: true });
+
+cpSync(
+  resolve(bm, "dist"),
+  resolve(output, "bahasa-melayu"),
+  { recursive: true }
+);
 
 console.log("\nEasyLearn production frontend created in ./dist");

@@ -448,7 +448,9 @@ async def _generate_gemini_tts_wav(script: str, session_id: str) -> str:
                     "response_modalities": ["AUDIO"],
                     "speech_config": {
                         "voice_config": {
-                            "voice": os.getenv("GEMINI_TTS_VOICE", "Kore"),
+                            "prebuilt_voice_config": {
+                                "voice_name": os.getenv("GEMINI_TTS_VOICE", "Kore"),
+                            },
                         },
                     },
                 },
